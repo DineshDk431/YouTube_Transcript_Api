@@ -1,6 +1,6 @@
 # 🎬 YouTube Transcripter
 
-> **AI-Powered Notes Generator** — Transform any YouTube video into detailed, emoji-rich study notes with real-world examples using Google Gemini AI.
+> **AI-Powered Notes Generator** — Transform any YouTube video into detailed, emoji study notes with real-world examples using thi site.
 
 ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi&logoColor=white)
@@ -106,7 +106,7 @@ http://localhost:8000
 │                                                             │
 │  4. 📋 View, Copy, or Download                             │
 │     └── Notes rendered as beautiful Markdown               │
-│     └── Copy to clipboard or download as .md               │
+│     └── Copy to clipboard or download as in .md               │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
