@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+youtube_transcript_api
+google-genai
+python-jose[cryptography]
+python-multipart
+
+
+# GEMINI_API_KEY = AIzaSyB0UUXecAd84F9f7Y0B-Z8i5BYP3FWaRFM

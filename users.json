@@ -1,0 +1,17 @@
+{
+  "test@example.com": {
+    "name": "Test User",
+    "password_hash": "b4e6bf5002d2982f39b3d9d9d2318612:e13283d2ea406e15e1d30e9f83026e66c848993797b6a416fc53e13c272264bc",
+    "created_at": "2026-02-11T16:51:24.321475"
+  },
+  "demo@test.com": {
+    "name": "Demo User",
+    "password_hash": "1892b0aca646f36ae4d56da0494502fd:95e02d3e89edf949663ad731cf459289c544c28c84b8ceeb208c8fffd0e788f3",
+    "created_at": "2026-02-11T17:08:44.223982"
+  },
+  "testlang@test.com": {
+    "name": "Lang Test",
+    "password_hash": "e9146213d40627f42540ed7df9efe0e6:cc1b1705b853f72d96081133b1154093f5682c1851b840517a589a2c7494c375",
+    "created_at": "2026-02-11T17:25:32.980582"
+  }
+}

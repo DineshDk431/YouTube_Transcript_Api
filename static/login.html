@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Transcripter — Login</title>
+    <meta name="description" content="Login to YouTube Transcripter - AI-powered notes from any YouTube video">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/login.css">
+</head>
+
+<body>
+    <!-- Floating Particles Background -->
+    <div class="particles" id="particles"></div>
+
+    <!-- Main Login Container -->
+    <div class="login-wrapper">
+        <!-- Branding -->
+        <div class="brand">
+            <div class="brand-icon">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+                    <rect width="24" height="24" rx="6" fill="url(#grad1)" />
+                    <polygon points="10,7 17,12 10,17" fill="white" />
+                    <defs>
+                        <linearGradient id="grad1" x1="0" y1="0" x2="24" y2="24">
+                            <stop offset="0%" style="stop-color:#ff6b6b" />
+                            <stop offset="100%" style="stop-color:#ee5a24" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+            <h1 class="brand-title">YouTube Transcripter</h1>
+        </div>
+
+        <!-- 3D Login Card -->
+        <div class="login-card" id="loginCard">
+            <!-- Animated Panda Character -->
+            <div class="character-container">
+                <svg id="character" viewBox="0 0 200 200" class="character-svg">
+                    <!-- Body (white with slight grey) -->
+                    <ellipse cx="100" cy="165" rx="50" ry="30" fill="#f0f0f0" class="char-body" />
+                    <!-- Black arms -->
+                    <ellipse cx="55" cy="155" rx="16" ry="12" fill="#1a1a2e" class="char-arm-left" />
+                    <ellipse cx="145" cy="155" rx="16" ry="12" fill="#1a1a2e" class="char-arm-right" />
+
+                    <!-- Head (white) -->
+                    <g id="pandaHead" class="panda-head">
+                        <circle cx="100" cy="88" r="52" fill="#f5f5f5" class="char-head" />
+                        <!-- Subtle head shadow -->
+                        <circle cx="100" cy="88" r="52" fill="url(#headShadow)" class="char-head-shadow" />
+
+                        <!-- Ears (black) -->
+                        <circle cx="56" cy="52" r="18" fill="#1a1a2e" class="char-ear-left" />
+                        <circle cx="144" cy="52" r="18" fill="#1a1a2e" class="char-ear-right" />
+                        <circle cx="56" cy="52" r="9" fill="#2d2d44" class="char-ear-inner" />
+                        <circle cx="144" cy="52" r="9" fill="#2d2d44" class="char-ear-inner" />
+
+                        <!-- Eye patches (black) — signature panda look -->
+                        <ellipse cx="76" cy="82" rx="20" ry="18" fill="#1a1a2e" class="eye-patch-left" />
+                        <ellipse cx="124" cy="82" rx="20" ry="18" fill="#1a1a2e" class="eye-patch-right" />
+
+                        <!-- Eyes (white with pupils inside black patches) -->
+                        <g class="eyes" id="charEyes">
+                            <g class="eye-left">
+                                <ellipse cx="76" cy="82" rx="10" ry="11" fill="white" class="eye-white" />
+                                <circle cx="76" cy="84" r="5.5" fill="#111" class="eye-pupil" id="pupilLeft" />
+                                <circle cx="74" cy="81" r="2" fill="white" class="eye-shine" />
+                            </g>
+                            <g class="eye-right">
+                                <ellipse cx="124" cy="82" rx="10" ry="11" fill="white" class="eye-white" />
+                                <circle cx="124" cy="84" r="5.5" fill="#111" class="eye-pupil" id="pupilRight" />
+                                <circle cx="122" cy="81" r="2" fill="white" class="eye-shine" />
+                            </g>
+                        </g>
+
+                        <!-- Eyelids (for closing eyes during password) -->
+                        <g class="eyelids" id="charEyelids">
+                            <ellipse cx="76" cy="73" rx="11" ry="3" fill="#1a1a2e" class="eyelid eyelid-left"
+                                id="eyelidLeft" />
+                            <ellipse cx="124" cy="73" rx="11" ry="3" fill="#1a1a2e" class="eyelid eyelid-right"
+                                id="eyelidRight" />
+                        </g>
+
+                        <!-- Nose -->
+                        <ellipse cx="100" cy="96" rx="6" ry="4.5" fill="#1a1a2e" class="nose" />
+                        <ellipse cx="100" cy="95" rx="3" ry="1.5" fill="#3d3d5c" class="nose-shine" />
+
+                        <!-- Mouth -->
+                        <path d="M 93 100 Q 100 110 107 100" stroke="#1a1a2e" stroke-width="2" fill="none" class="mouth"
+                            id="charMouth" />
+
+                        <!-- Blush (subtle pink) -->
+                        <ellipse cx="62" cy="95" rx="8" ry="5" fill="#ffb3b3" opacity="0.35" class="blush" />
+                        <ellipse cx="138" cy="95" rx="8" ry="5" fill="#ffb3b3" opacity="0.35" class="blush" />
+                    </g>
+
+                    <!-- Paws (for covering eyes) -->
+                    <g class="hands" id="charHands">
+                        <ellipse cx="68" cy="135" rx="16" ry="12" fill="#f0f0f0" stroke="#ddd" stroke-width="1"
+                            class="hand-left" id="handLeft" />
+                        <ellipse cx="132" cy="135" rx="16" ry="12" fill="#f0f0f0" stroke="#ddd" stroke-width="1"
+                            class="hand-right" id="handRight" />
+                        <!-- Paw pads -->
+                        <circle cx="64" cy="134" r="3" fill="#e0d0d0" class="paw-pad hand-left-pad" />
+                        <circle cx="72" cy="134" r="3" fill="#e0d0d0" class="paw-pad hand-right-pad" />
+                        <circle cx="68" cy="130" r="3" fill="#e0d0d0" class="paw-pad hand-center-pad" />
+                        <circle cx="128" cy="134" r="3" fill="#e0d0d0" class="paw-pad hand-left-pad2" />
+                        <circle cx="136" cy="134" r="3" fill="#e0d0d0" class="paw-pad hand-right-pad2" />
+                        <circle cx="132" cy="130" r="3" fill="#e0d0d0" class="paw-pad hand-center-pad2" />
+                    </g>
+
+                    <defs>
+                        <radialGradient id="headShadow" cx="50%" cy="100%">
+                            <stop offset="0%" style="stop-color:transparent" />
+                            <stop offset="80%" style="stop-color:transparent" />
+                            <stop offset="100%" style="stop-color:rgba(0,0,0,0.03)" />
+                        </radialGradient>
+                    </defs>
+                </svg>
+            </div>
+
+            <!-- Form Title -->
+            <h2 class="form-title" id="formTitle">Welcome Back! 👋</h2>
+            <p class="form-subtitle" id="formSubtitle">Sign in to generate AI-powered notes</p>
+
+            <!-- Login Form -->
+            <form id="authForm" autocomplete="off">
+                <!-- Name (signup only) -->
+                <div class="input-group hidden" id="nameGroup">
+                    <div class="input-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
+                    </div>
+                    <input type="text" id="nameInput" placeholder="Full Name" autocomplete="off">
+                    <div class="input-line"></div>
+                </div>
+
+                <!-- Email -->
+                <div class="input-group">
+                    <div class="input-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <rect x="2" y="4" width="20" height="16" rx="2" />
+                            <path d="M22 7l-10 6L2 7" />
+                        </svg>
+                    </div>
+                    <input type="email" id="emailInput" placeholder="Email Address" required autocomplete="off">
+                    <div class="input-line"></div>
+                </div>
+
+                <!-- Password -->
+                <div class="input-group">
+                    <div class="input-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" />
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        </svg>
+                    </div>
+                    <input type="password" id="passwordInput" placeholder="Password" required autocomplete="off">
+                    <div class="input-line"></div>
+                    <button type="button" class="toggle-password" id="togglePassword">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    <span class="btn-text" id="btnText">Sign In</span>
+                    <div class="btn-loader hidden" id="btnLoader">
+                        <div class="spinner"></div>
+                    </div>
+                </button>
+            </form>
+
+            <!-- Divider -->
+            <div class="divider">
+                <span>or continue with</span>
+            </div>
+
+            <!-- Google Sign In -->
+            <button type="button" class="btn-google" id="googleBtn">
+                <svg width="20" height="20" viewBox="0 0 48 48">
+                    <path fill="#EA4335"
+                        d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+                    <path fill="#4285F4"
+                        d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+                    <path fill="#FBBC05"
+                        d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+                    <path fill="#34A853"
+                        d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+                </svg>
+                <span>Sign in with Google</span>
+            </button>
+
+            <!-- Toggle Login/Signup -->
+            <p class="toggle-text">
+                <span id="toggleMsg">Don't have an account?</span>
+                <a href="#" id="toggleLink" class="toggle-link">Sign Up</a>
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <p class="footer-text">🎬 Transform any YouTube video into detailed AI notes</p>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="/static/js/login.js"></script>
+</body>
+
+</html>

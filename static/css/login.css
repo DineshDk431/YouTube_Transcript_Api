@@ -1,0 +1,932 @@
+/* ========================================
+   YouTube Transcripter — Login Page Styles
+   Premium Dark Glassmorphism Theme
+   ======================================== */
+
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --bg-primary: #06061a;
+    --bg-card: rgba(255, 255, 255, 0.04);
+    --border-card: rgba(255, 255, 255, 0.07);
+    --text-primary: #eeeef5;
+    --text-secondary: #9d9db8;
+    --text-muted: #5e5e78;
+    --accent-1: #6c5ce7;
+    --accent-2: #a29bfe;
+    --accent-3: #fd79a8;
+    --accent-4: #e17055;
+    --accent-5: #00b894;
+    --input-bg: rgba(255, 255, 255, 0.04);
+    --input-border: rgba(255, 255, 255, 0.08);
+    --input-focus: #6c5ce7;
+    --radius-lg: 24px;
+    --radius-md: 16px;
+    --radius-sm: 12px;
+}
+
+html {
+    font-size: 16px;
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ═══════ Animated Background ═══════ */
+body::before {
+    content: '';
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background:
+        radial-gradient(ellipse at 20% 50%, rgba(108, 92, 231, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(253, 121, 168, 0.07) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 80%, rgba(0, 184, 148, 0.05) 0%, transparent 50%);
+    animation: bgShift 18s ease-in-out infinite alternate;
+    z-index: 0;
+}
+
+@keyframes bgShift {
+    0% {
+        transform: translate(0, 0) rotate(0deg);
+    }
+
+    33% {
+        transform: translate(-2%, 1%) rotate(0.5deg);
+    }
+
+    66% {
+        transform: translate(1%, -1%) rotate(-0.3deg);
+    }
+
+    100% {
+        transform: translate(-1%, 2%) rotate(0.3deg);
+    }
+}
+
+/* Grain texture */
+body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.015;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ═══════ Floating Particles ═══════ */
+.particles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.particle {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0;
+    animation: particleFloat linear infinite;
+}
+
+@keyframes particleFloat {
+    0% {
+        opacity: 0;
+        transform: translateY(100vh) scale(0);
+    }
+
+    10% {
+        opacity: 0.8;
+    }
+
+    90% {
+        opacity: 0.8;
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(-10vh) scale(1);
+    }
+}
+
+/* ═══════ Login Wrapper ═══════ */
+.login-wrapper {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 440px;
+    padding: 20px;
+}
+
+/* ═══════ Brand ═══════ */
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 32px;
+    animation: fadeInDown 0.8s ease-out;
+}
+
+.brand-icon {
+    display: flex;
+    align-items: center;
+    filter: drop-shadow(0 4px 14px rgba(255, 107, 107, 0.35));
+    transition: transform 0.3s ease;
+}
+
+.brand-icon:hover {
+    transform: scale(1.1) rotate(-5deg);
+}
+
+.brand-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #f0f0f5 0%, #a0a0b8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.02em;
+}
+
+/* ═══════ 3D Login Card ═══════ */
+.login-card {
+    width: 100%;
+    background: var(--bg-card);
+    backdrop-filter: blur(40px) saturate(1.3);
+    -webkit-backdrop-filter: blur(40px) saturate(1.3);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-lg);
+    padding: 36px 32px;
+    position: relative;
+    box-shadow: 0 0 100px rgba(108, 92, 231, 0.06),
+        0 30px 80px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    transform-style: preserve-3d;
+    perspective: 1000px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    animation: cardEntrance 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: 0.2s;
+    overflow: hidden;
+}
+
+/* Shimmer border effect */
+.login-card::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    bottom: -1px;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(135deg,
+            transparent 0%,
+            rgba(108, 92, 231, 0.12) 25%,
+            transparent 50%,
+            rgba(253, 121, 168, 0.08) 75%,
+            transparent 100%);
+    background-size: 400% 400%;
+    animation: shimmerBorder 8s ease-in-out infinite;
+    z-index: -1;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    -webkit-mask-composite: xor;
+    padding: 1px;
+}
+
+@keyframes shimmerBorder {
+
+    0%,
+    100% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+.login-card:hover {
+    box-shadow: 0 0 120px rgba(108, 92, 231, 0.08),
+        0 35px 90px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+@keyframes cardEntrance {
+    from {
+        opacity: 0;
+        transform: translateY(50px) rotateX(10deg) scale(0.93);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) rotateX(0deg) scale(1);
+    }
+}
+
+/* ═══════ Animated Panda Character ═══════ */
+.character-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 8px;
+    margin-top: -4px;
+}
+
+.character-svg {
+    width: 160px;
+    height: 160px;
+    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.2));
+}
+
+/* Idle animations */
+.char-body {
+    transform-origin: center;
+    animation: bodyBounce 3s ease-in-out infinite;
+}
+
+@keyframes bodyBounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-3px);
+    }
+}
+
+/* Panda head group — for head shake */
+.panda-head {
+    transform-origin: 100px 88px;
+    animation: headBob 4s ease-in-out infinite;
+    transition: transform 0.15s ease;
+}
+
+@keyframes headBob {
+
+    0%,
+    100% {
+        transform: translateY(0) rotate(0deg);
+    }
+
+    25% {
+        transform: translateY(-2px) rotate(1deg);
+    }
+
+    75% {
+        transform: translateY(-2px) rotate(-1deg);
+    }
+}
+
+/* Head shake on wrong password — 2 shakes */
+.panda-head.head-shake {
+    animation: headShake 0.6s ease-in-out !important;
+}
+
+@keyframes headShake {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    15% {
+        transform: rotate(-8deg);
+    }
+
+    30% {
+        transform: rotate(8deg);
+    }
+
+    45% {
+        transform: rotate(-8deg);
+    }
+
+    60% {
+        transform: rotate(8deg);
+    }
+
+    75% {
+        transform: rotate(-4deg);
+    }
+
+    90% {
+        transform: rotate(2deg);
+    }
+
+    100% {
+        transform: rotate(0deg);
+    }
+}
+
+.char-ear-left,
+.char-ear-right {
+    animation: earWiggle 5s ease-in-out infinite;
+}
+
+.char-ear-right {
+    animation-delay: 0.3s;
+}
+
+@keyframes earWiggle {
+
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+
+    25% {
+        transform: rotate(3deg);
+    }
+
+    75% {
+        transform: rotate(-3deg);
+    }
+}
+
+/* Eye tracking (controlled by JS) */
+.eye-pupil {
+    transition: transform 0.15s ease-out;
+}
+
+.eye-shine {
+    transition: transform 0.15s ease-out;
+}
+
+/* ═══════ Eyelids — close eyes on password ═══════ */
+.eyelid {
+    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* When eyes are closed (password mode) */
+.eyes-closed .eyelid-left {
+    cy: 82;
+    ry: 12;
+}
+
+.eyes-closed .eyelid-right {
+    cy: 82;
+    ry: 12;
+}
+
+/* Hide pupils and shine when eyes are closed */
+.eyes-closed~.eyes .eye-white,
+.character-svg.password-mode .eye-white {
+    ry: 2;
+    transition: ry 0.3s ease;
+}
+
+.character-svg.password-mode .eye-pupil,
+.character-svg.password-mode .eye-shine {
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+/* Normal state for pupils */
+.eye-pupil,
+.eye-shine {
+    transition: opacity 0.25s ease, transform 0.15s ease-out;
+    opacity: 1;
+}
+
+/* Paws covering eyes — using JS attribute changes */
+.hand-left,
+.hand-right {
+    transition: cx 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+        cy 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+        rx 0.3s ease, ry 0.3s ease;
+}
+
+.paw-pad {
+    transition: opacity 0.3s ease;
+}
+
+
+/* Mouth */
+.mouth {
+    transition: d 0.3s ease;
+}
+
+/* Character states */
+.character-svg.watching .panda-head {
+    animation: headWatch 2.5s ease-in-out infinite;
+}
+
+@keyframes headWatch {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-3px);
+    }
+}
+
+/* Blush glow on password mode */
+.character-svg.password-mode .blush {
+    opacity: 0.6 !important;
+    animation: blushPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes blushPulse {
+
+    0%,
+    100% {
+        opacity: 0.5;
+    }
+
+    50% {
+        opacity: 0.8;
+    }
+}
+
+/* Error state — red tint on card */
+.login-card.error-shake {
+    animation: cardShake 0.5s ease;
+    border-color: rgba(255, 107, 107, 0.3) !important;
+}
+
+@keyframes cardShake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    20% {
+        transform: translateX(-6px);
+    }
+
+    40% {
+        transform: translateX(6px);
+    }
+
+    60% {
+        transform: translateX(-4px);
+    }
+
+    80% {
+        transform: translateX(4px);
+    }
+}
+
+/* ═══════ Form Title ═══════ */
+.form-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 4px;
+    letter-spacing: -0.02em;
+}
+
+.form-subtitle {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-bottom: 28px;
+}
+
+/* ═══════ Input Groups ═══════ */
+.input-group {
+    position: relative;
+    margin-bottom: 18px;
+    transition: all 0.3s ease;
+}
+
+.input-group.hidden {
+    display: none;
+}
+
+.input-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    transition: color 0.3s ease;
+    z-index: 2;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 15px 16px 15px 48px;
+    background: var(--input-bg);
+    border: 1.5px solid var(--input-border);
+    border-radius: var(--radius-md);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.88rem;
+    color: var(--text-primary);
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.input-group input::placeholder {
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.input-group input:focus {
+    border-color: var(--input-focus);
+    background: rgba(108, 92, 231, 0.04);
+    box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.08),
+        0 4px 20px rgba(108, 92, 231, 0.06);
+}
+
+.input-group input:focus+.input-line {
+    transform: scaleX(1);
+}
+
+.input-group:focus-within .input-icon {
+    color: var(--accent-1);
+}
+
+.input-line {
+    position: absolute;
+    bottom: 0;
+    left: 16px;
+    right: 16px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent-1), var(--accent-3));
+    border-radius: 2px;
+    transform: scaleX(0);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ═══════ Toggle Password ═══════ */
+.toggle-password {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    transition: color 0.3s ease;
+    z-index: 2;
+}
+
+.toggle-password:hover {
+    color: var(--text-primary);
+}
+
+/* ═══════ Submit Button ═══════ */
+.btn-submit {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, var(--accent-1) 0%, #8b5cf6 50%, var(--accent-3) 100%);
+    background-size: 200% 200%;
+    border: none;
+    border-radius: var(--radius-md);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s ease;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 50px;
+    animation: btnGradient 3s ease-in-out infinite;
+}
+
+@keyframes btnGradient {
+
+    0%,
+    100% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+.btn-submit::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+    transition: left 0.6s ease;
+}
+
+.btn-submit:hover::before {
+    left: 100%;
+}
+
+.btn-submit:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 35px rgba(108, 92, 231, 0.4),
+        0 4px 15px rgba(253, 121, 168, 0.2);
+}
+
+.btn-submit:active {
+    transform: translateY(-1px);
+}
+
+.btn-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-loader {
+    display: flex;
+    align-items: center;
+}
+
+.btn-loader.hidden {
+    display: none;
+}
+
+.btn-text.hidden {
+    display: none;
+}
+
+.spinner {
+    width: 22px;
+    height: 22px;
+    border: 2.5px solid rgba(255, 255, 255, 0.25);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ═══════ Divider ═══════ */
+.divider {
+    display: flex;
+    align-items: center;
+    margin: 24px 0;
+    gap: 14px;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--input-border);
+}
+
+.divider span {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+}
+
+/* ═══════ Google Button ═══════ */
+.btn-google {
+    width: 100%;
+    padding: 13px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1.5px solid var(--input-border);
+    border-radius: var(--radius-md);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    transition: all 0.3s ease;
+}
+
+.btn-google:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.btn-google:active {
+    transform: translateY(0);
+}
+
+/* ═══════ Toggle Text ═══════ */
+.toggle-text {
+    text-align: center;
+    font-size: 0.84rem;
+    color: var(--text-secondary);
+    margin-top: 22px;
+}
+
+.toggle-link {
+    color: var(--accent-2);
+    text-decoration: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-left: 4px;
+    position: relative;
+}
+
+.toggle-link::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 1.5px;
+    background: var(--accent-1);
+    transition: width 0.3s ease;
+}
+
+.toggle-link:hover::after {
+    width: 100%;
+}
+
+.toggle-link:hover {
+    color: var(--accent-1);
+}
+
+/* ═══════ Footer ═══════ */
+.footer-text {
+    margin-top: 28px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-align: center;
+    animation: fadeInUp 1s ease-out both;
+    animation-delay: 0.6s;
+}
+
+/* ═══════ Toast Notifications ═══════ */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.toast {
+    padding: 14px 22px;
+    border-radius: var(--radius-md);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.84rem;
+    color: white;
+    backdrop-filter: blur(20px);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: toastIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
+    max-width: 360px;
+}
+
+.toast.success {
+    background: rgba(0, 184, 148, 0.92);
+}
+
+.toast.error {
+    background: rgba(255, 107, 107, 0.92);
+}
+
+.toast.info {
+    background: rgba(108, 92, 231, 0.92);
+}
+
+.toast-exit {
+    animation: toastOut 0.3s ease-in forwards;
+}
+
+@keyframes toastIn {
+    from {
+        opacity: 0;
+        transform: translateX(80px) scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@keyframes toastOut {
+    to {
+        opacity: 0;
+        transform: translateX(80px) scale(0.9);
+    }
+}
+
+/* ═══════ Animations ═══════ */
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-24px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(24px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ═══════ Responsive ═══════ */
+@media (max-width: 480px) {
+    .login-wrapper {
+        padding: 16px;
+    }
+
+    .login-card {
+        padding: 28px 20px;
+        border-radius: 20px;
+    }
+
+    .character-svg {
+        width: 130px;
+        height: 130px;
+    }
+
+    .form-title {
+        font-size: 1.2rem;
+    }
+
+    .brand-title {
+        font-size: 1.25rem;
+    }
+}
+
+@media (max-height: 700px) {
+    .character-svg {
+        width: 120px;
+        height: 120px;
+    }
+
+    .login-card {
+        padding: 24px;
+    }
+
+    .input-group {
+        margin-bottom: 14px;
+    }
+
+    .divider {
+        margin: 18px 0;
+    }
+}

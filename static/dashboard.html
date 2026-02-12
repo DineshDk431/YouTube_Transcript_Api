@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Transcripter — AI-Powered Notes</title>
+    <meta name="description" content="Transform any YouTube video into detailed, emoji-rich AI notes with examples">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+    <!-- ═══════════════ Navbar ═══════════════ -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <rect width="24" height="24" rx="6" fill="url(#navGrad)" />
+                <polygon points="10,7 17,12 10,17" fill="white" />
+                <defs>
+                    <linearGradient id="navGrad" x1="0" y1="0" x2="24" y2="24">
+                        <stop offset="0%" style="stop-color:#ff6b6b" />
+                        <stop offset="100%" style="stop-color:#ee5a24" />
+                    </linearGradient>
+                </defs>
+            </svg>
+            <span class="nav-brand-text">YouTube Transcripter</span>
+        </div>
+        <div class="nav-user">
+            <span class="nav-user-email" id="navUserEmail"></span>
+            <button class="btn-logout" id="btnLogout">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    style="margin-right:4px">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                Logout
+            </button>
+        </div>
+    </nav>
+
+    <!-- ═══════════════ Main ═══════════════ -->
+    <main class="main-content">
+
+        <!-- ── Hero Section with 3D Parallax ── -->
+        <section class="hero-section" id="heroSection">
+            <!-- 3D Floating Orbs -->
+            <div class="hero-orbs">
+                <div class="orb orb-1"></div>
+                <div class="orb orb-2"></div>
+                <div class="orb orb-3"></div>
+            </div>
+
+            <div class="hero-badge scroll-reveal" data-delay="0">
+                <span class="pulse-dot"></span>
+                AI-Powered • Real-Time Notes
+            </div>
+            <h1 class="hero-title scroll-reveal" data-delay="100">
+                Transform YouTube Videos<br>into <span class="gradient-text">Brilliant Notes</span>
+            </h1>
+            <p class="hero-subtitle scroll-reveal" data-delay="200">
+                Paste any YouTube URL and get detailed, emoji-rich notes with real-world examples — all powered by
+                Google Gemini AI
+            </p>
+
+            <!-- Animated Stats -->
+            <div class="hero-stats scroll-reveal" data-delay="300">
+                <div class="stat-item">
+                    <span class="stat-icon">🚀</span>
+                    <span class="stat-value">Instant</span>
+                    <span class="stat-label">Generation</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                    <span class="stat-icon">📝</span>
+                    <span class="stat-value">Detailed</span>
+                    <span class="stat-label">Point-by-Point</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                    <span class="stat-icon">💡</span>
+                    <span class="stat-value">Examples</span>
+                    <span class="stat-label">Real-World</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── Input Section ── -->
+        <section class="input-section" id="inputSection">
+            <div class="input-card scroll-reveal" data-delay="100">
+                <div class="input-card-header">
+                    <div class="input-card-title">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <polygon points="5 3 19 12 5 21 5 3" />
+                        </svg>
+                        Generate Notes
+                    </div>
+                    <div class="input-card-badge">✨ Gemini AI</div>
+                </div>
+
+                <form id="generateForm">
+                    <!-- YouTube URL -->
+                    <div class="field-group">
+                        <label class="field-label">YouTube Video URL</label>
+                        <div class="field-input-wrapper">
+                            <div class="field-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                                </svg>
+                            </div>
+                            <input type="url" id="youtubeUrl" class="field-input has-icon"
+                                placeholder="https://www.youtube.com/watch?v=..." required>
+                        </div>
+                    </div>
+
+                    <!-- API Key -->
+                    <div class="field-group">
+                        <label class="field-label">Gemini API Key</label>
+                        <div class="field-input-wrapper">
+                            <div class="field-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path
+                                        d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+                                </svg>
+                            </div>
+                            <input type="password" id="apiKey" class="field-input has-icon"
+                                placeholder="Enter your Gemini API key" value="AIzaSyB0UUXecAd84F9f7Y0B-Z8i5BYP3FWaRFM"
+                                required>
+                            <button type="button" class="field-toggle-vis" id="toggleApiKey">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                    <circle cx="12" cy="12" r="3" />
+                                </svg>
+                            </button>
+                        </div>
+                        <p class="field-hint">
+                            🔑 Get your free API key at
+                            <a href="https://aistudio.google.com/apikey" target="_blank"
+                                rel="noopener">aistudio.google.com</a>
+                        </p>
+                    </div>
+
+                    <!-- Output Language -->
+                    <div class="field-group">
+                        <label class="field-label">Output Language</label>
+                        <div class="field-input-wrapper">
+                            <div class="field-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="2" y1="12" x2="22" y2="12" />
+                                    <path
+                                        d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                                </svg>
+                            </div>
+                            <select id="outputLanguage" class="field-input field-select has-icon">
+                                <option value="English" selected>🇬🇧 English (Default)</option>
+                                <optgroup label="━━ Indian Languages ━━">
+                                    <option value="Hindi">🇮🇳 Hindi (हिन्दी)</option>
+                                    <option value="Tamil">🇮🇳 Tamil (தமிழ்)</option>
+                                    <option value="Telugu">🇮🇳 Telugu (తెలుగు)</option>
+                                    <option value="Malayalam">🇮🇳 Malayalam (മലയാളം)</option>
+                                    <option value="Kannada">🇮🇳 Kannada (ಕನ್ನಡ)</option>
+                                    <option value="Bengali">🇮🇳 Bengali (বাংলা)</option>
+                                    <option value="Marathi">🇮🇳 Marathi (मराठी)</option>
+                                    <option value="Gujarati">🇮🇳 Gujarati (ગુજરાતી)</option>
+                                    <option value="Urdu">🇵🇰 Urdu (اردو)</option>
+                                </optgroup>
+                                <optgroup label="━━ World Languages ━━">
+                                    <option value="Spanish">🇪🇸 Spanish (Español)</option>
+                                    <option value="French">🇫🇷 French (Français)</option>
+                                    <option value="German">🇩🇪 German (Deutsch)</option>
+                                    <option value="Japanese">🇯🇵 Japanese (日本語)</option>
+                                    <option value="Korean">🇰🇷 Korean (한국어)</option>
+                                    <option value="Chinese">🇨🇳 Chinese (中文)</option>
+                                    <option value="Arabic">🇸🇦 Arabic (العربية)</option>
+                                    <option value="Portuguese">🇧🇷 Portuguese (Português)</option>
+                                    <option value="Russian">🇷🇺 Russian (Русский)</option>
+                                    <option value="Indonesian">🇮🇩 Indonesian (Bahasa)</option>
+                                </optgroup>
+                                <optgroup label="━━━━━━━━━━━━━━━━━━">
+                                    <option value="custom">✏️ Other (type below)</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div class="custom-lang-wrapper hidden" id="customLangWrapper">
+                            <input type="text" id="customLanguage" class="field-input"
+                                placeholder="Type language name, e.g. Thai, Swahili, Dutch...">
+                        </div>
+                        <p class="field-hint">
+                            🌍 Notes will be generated in this language, regardless of video's language
+                        </p>
+                    </div>
+
+                    <!-- Generate Button -->
+                    <button type="submit" class="btn-generate" id="btnGenerate">
+                        <span class="gen-text" id="genText">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                                <path d="M2 17l10 5 10-5" />
+                                <path d="M2 12l10 5 10-5" />
+                            </svg>
+                            Generate Detailed Notes
+                        </span>
+                        <div class="gen-spinner hidden" id="genSpinner"></div>
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- ── Processing Animation ── -->
+        <section class="processing-section hidden" id="processingSection">
+            <div class="processing-card">
+                <div class="processing-animation">
+                    <div class="processing-ring">
+                        <div class="ring-segment"></div>
+                        <div class="ring-segment"></div>
+                        <div class="ring-segment"></div>
+                    </div>
+                    <div class="processing-icon">🤖</div>
+                </div>
+                <h3 class="processing-title">AI is Analyzing...</h3>
+                <p class="processing-subtitle" id="processingStatus">Extracting transcript from video</p>
+                <div class="processing-steps">
+                    <div class="step active" id="step1">
+                        <div class="step-dot"></div>
+                        <span>Fetching transcript</span>
+                    </div>
+                    <div class="step" id="step2">
+                        <div class="step-dot"></div>
+                        <span>Processing with AI</span>
+                    </div>
+                    <div class="step" id="step3">
+                        <div class="step-dot"></div>
+                        <span>Generating notes</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── Video Preview ── -->
+        <section class="video-preview" id="videoPreview">
+            <div class="video-card">
+                <iframe id="videoEmbed" class="video-embed" allowfullscreen></iframe>
+                <div class="video-info">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <polygon points="10 8 16 12 10 16 10 8" />
+                    </svg>
+                    <span id="videoTitle">Video Preview</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── Results Section ── -->
+        <section class="results-section" id="resultsSection">
+            <div class="results-card">
+                <div class="results-header">
+                    <div class="results-title">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="16" y1="13" x2="8" y2="13" />
+                            <line x1="16" y1="17" x2="8" y2="17" />
+                        </svg>
+                        Generated Notes
+                    </div>
+                    <div class="results-actions">
+                        <button class="btn-copy" id="btnCopy">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" />
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                            </svg>
+                            <span id="copyText">Copy</span>
+                        </button>
+                        <button class="btn-download" id="btnDownload">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="7 10 12 15 17 10" />
+                                <line x1="12" y1="15" x2="12" y2="3" />
+                            </svg>
+                            Download
+                        </button>
+                    </div>
+                </div>
+                <div class="results-body" id="resultsBody">
+                    <!-- AI-generated notes rendered here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ── Features Section with 3D Cards ── -->
+        <section class="features-section" id="featuresSection">
+            <h2 class="features-title scroll-reveal" data-delay="0">
+                ✨ Why YouTube Transcripter?
+            </h2>
+            <div class="features-grid">
+                <div class="feature-card scroll-reveal" data-delay="0">
+                    <div class="feature-icon-wrapper">
+                        <span class="feature-icon">🎯</span>
+                    </div>
+                    <h3 class="feature-name">Point-by-Point Notes</h3>
+                    <p class="feature-desc">Every concept broken down into clear, digestible points that are easy to
+                        follow and remember</p>
+                </div>
+                <div class="feature-card scroll-reveal" data-delay="100">
+                    <div class="feature-icon-wrapper">
+                        <span class="feature-icon">💡</span>
+                    </div>
+                    <h3 class="feature-name">Real-World Examples</h3>
+                    <p class="feature-desc">Each point comes with practical, real-world examples to help you truly
+                        understand the concepts</p>
+                </div>
+                <div class="feature-card scroll-reveal" data-delay="200">
+                    <div class="feature-icon-wrapper">
+                        <span class="feature-icon">😀</span>
+                    </div>
+                    <h3 class="feature-name">Emoji-Rich Format</h3>
+                    <p class="feature-desc">Visual emojis make your notes more engaging, scannable, and fun to review
+                        later</p>
+                </div>
+                <div class="feature-card scroll-reveal" data-delay="300">
+                    <div class="feature-icon-wrapper">
+                        <span class="feature-icon">🤖</span>
+                    </div>
+                    <h3 class="feature-name">Gemini AI Powered</h3>
+                    <p class="feature-desc">Google's most capable AI model ensures accurate, comprehensive, and
+                        well-structured notes</p>
+                </div>
+                <div class="feature-card scroll-reveal" data-delay="400">
+                    <div class="feature-icon-wrapper">
+                        <span class="feature-icon">⚡</span>
+                    </div>
+                    <h3 class="feature-name">Instant Generation</h3>
+                    <p class="feature-desc">Get your complete notes in seconds — no waiting, no manual work, just paste
+                        and go</p>
+                </div>
+                <div class="feature-card scroll-reveal" data-delay="500">
+                    <div class="feature-icon-wrapper">
+                        <span class="feature-icon">📋</span>
+                    </div>
+                    <h3 class="feature-name">Copy & Download</h3>
+                    <p class="feature-desc">One-click copy to clipboard or download as a file to use anywhere you need
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── Footer ── -->
+        <footer class="footer">
+            <div class="footer-content">
+                <p class="footer-text">
+                    Built with ❤️ using <span class="footer-accent">FastAPI</span> + <span class="footer-accent">Gemini
+                        AI</span>
+                </p>
+                <p class="footer-sub">YouTube Transcripter © 2026</p>
+            </div>
+        </footer>
+    </main>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scroll-to-top -->
+    <button class="btn-scroll-top hidden" id="btnScrollTop">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="18 15 12 9 6 15" />
+        </svg>
+    </button>
+
+    <script src="/static/js/app.js"></script>
+</body>
+
+</html>
