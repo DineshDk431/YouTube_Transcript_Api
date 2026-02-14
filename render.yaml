@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: youtube-transcripter
+    env: docker
+    plan: free
+    branch: main
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
+      - key: PORT
+        value: 8080
