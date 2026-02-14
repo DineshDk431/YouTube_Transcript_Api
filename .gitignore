@@ -1,0 +1,18 @@
+__pycache__/
+.venv/
+venv/
+*.pyc
+.env
+.DS_Store
+
+# Exclude test and verification files per user request
+verify_deployment.py
+preview_server.py
+test_*.py
+
+# Exclude user data (best practice)
+users.json
+data/history/*.json
+
+serviceAccountKey.json
+push_log.txt

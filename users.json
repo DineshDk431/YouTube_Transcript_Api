@@ -13,5 +13,99 @@
     "name": "Lang Test",
     "password_hash": "e9146213d40627f42540ed7df9efe0e6:cc1b1705b853f72d96081133b1154093f5682c1851b840517a589a2c7494c375",
     "created_at": "2026-02-11T17:25:32.980582"
+  },
+  "maddydinesh5578@gmail.com": {
+    "name": "M\u1d00\u1d05\u1d05\u028f D\u026a\u0274\u1d07s\u029c",
+    "password_hash": "4534ea3345b9fbb4a73fdb00ae7bd56b:e17729a74dc31a7bf3332bf650749653d228f7042bf34f07c3da8f524b6e58d0",
+    "created_at": "2026-02-12T16:17:09.906149",
+    "dob": "2005-03-02",
+    "gender": "male",
+    "role": "student",
+    "photo_url": "https://lh3.googleusercontent.com/a/ACg8ocI34aEWqk-VWPP9kS7wAaDq3_n-OLg8D15WUoPI1U-xcNMc2A=s96-c"
+  },
+  "verify@test.com": {
+    "name": "Verify User",
+    "password_hash": "5c7d96e1663026a5a4796e234663b551:a9b661f42ae8043f2050abdf905285d21aa153ee8797e13003111d1d635f69e6",
+    "created_at": "2026-02-12T16:49:52.230447"
+  },
+  "roletest@test.com": {
+    "name": "Role Tester",
+    "password_hash": "a1ac389539fab4da3c8f3c10e7f8c998:e3856c4cc5749363dd2de4d983ac49e4c08124c5b6af3964a66e6d824f2969b8",
+    "created_at": "2026-02-12T16:50:10.010042",
+    "dob": "2000-05-15",
+    "gender": "male",
+    "role": "teacher"
+  },
+  "phase4test@test.com": {
+    "name": "Phase4 Tester",
+    "password_hash": "458e3449e77ccdbe0350251c0b826307:d51693e0b8a74645e08ea9b68aa1e20287b09e68e45c216a5888d3e9574e6548",
+    "created_at": "2026-02-12T16:59:49.594618"
+  },
+  "perftest@test.com": {
+    "name": "Perf Tester",
+    "password_hash": "367e15af586dc6509df03b3677c014f0:b50cd477b7609d7d36e51ca9fb3555b5acf7a9c08d92aed0bc8b0759d6d8739b",
+    "created_at": "2026-02-12T17:10:29.027383"
+  },
+  "perftest2@test.com": {
+    "name": "Perf Tester 2",
+    "password_hash": "5ab72d88a0e0f858427fec999aa4e623:55ac9694379ea5040201507aab0c8d9e3ecc15dabe7b9f72414e71c15ff31724",
+    "created_at": "2026-02-12T17:11:30.707734"
+  },
+  "test_1770916976@example.com": {
+    "name": "Test User",
+    "password_hash": "c8f197c08c950f3f4aad054ef1208fb5:b5bc547e984ddd96c67a52586facd803f6324529b94a85d97fa0653ba11377b4",
+    "created_at": "2026-02-12T17:22:58.954133"
+  },
+  "test_1770917013@example.com": {
+    "name": "Test User",
+    "password_hash": "b8261916a2c2f8f9e013cccae4ce5278:98b53fc125a91a1b1a45eab4b4c81791bf9f6a1de4a88f909629afafb26a8b7c",
+    "created_at": "2026-02-12T17:23:35.773963"
+  },
+  "report_test_1770917450@example.com": {
+    "name": "Report Tester",
+    "password_hash": "58de19dee8bcc6e0c5377791cb7dc0e3:8f6c62a6828d8d8f7fb3408a7e50868cfc5e87765c15e6d50900d383c98d18b1",
+    "created_at": "2026-02-12T17:30:52.460905"
+  },
+  "testuser1@example.com": {
+    "name": "Test User 1",
+    "password_hash": "4370340afb48bf9604d8fecb4a7d3514:499855342f1494aef75d3da0106eb3239ee89c8da142e73619dcc50406098c63",
+    "created_at": "2026-02-13T15:46:35.813308",
+    "last_login": "2026-02-13T15:46:35.825621"
+  },
+  "testuser2@example.com": {
+    "name": "Test User 2",
+    "password_hash": "287852a18e7294b324a01f3e4b58f222:eb1e55edf1bfa1efc4278974bdd9963ffb763e79ce28ec1ff7026f30718d0655",
+    "created_at": "2026-02-13T15:46:35.835632",
+    "last_login": "2026-02-13T15:46:35.855835"
+  },
+  "testuser3@example.com": {
+    "name": "Test User 3",
+    "password_hash": "fbc3652b73df7c6ba9be5b43367841b8:406a38ed0010662f24b8e1087aece5125c87101f98a8859cf8c42b1bd52201eb",
+    "created_at": "2026-02-13T15:46:35.845942",
+    "last_login": "2026-02-13T15:48:25.607769"
+  },
+  "testuser4@example.com": {
+    "name": "Test User 4",
+    "password_hash": "31bdd059a4fe457cc7ccd90e64bb5e6e:b94aca7707fca34b44ef730e84c6e6b8152ba2c84cb6da813cb9062c3f7b90b0",
+    "created_at": "2026-02-13T15:48:25.662715",
+    "last_login": "2026-02-13T15:50:22.951136"
+  },
+  "testuser5@example.com": {
+    "name": "Test User 5",
+    "password_hash": "f93a1b1f5a22fe2a888b337566bc426f:3fbabff55c19224be09b520e7d21c5db3c409efe72b7af7c163270747da50675",
+    "created_at": "2026-02-13T15:50:22.964496",
+    "last_login": "2026-02-13T15:50:22.976400"
+  },
+  "testuser7@example.com": {
+    "name": "Test User 7",
+    "password_hash": "7073f7bcbed3199cf05665796a8f7158:f1761b721828f5a1c682d3f24a6871dd38f068f84b6955d23a9d0e99ed64bd63",
+    "created_at": "2026-02-13T15:50:55.473448",
+    "last_login": "2026-02-13T15:51:36.628536"
+  },
+  "testuser6@example.com": {
+    "name": "Test User 6",
+    "password_hash": "831e2fc749e02c82ec3618591064a73c:eb700331bb48c7dda5a78369349e680f2eeea7512469ada510663b140a5a0769",
+    "created_at": "2026-02-13T15:50:55.486004",
+    "last_login": "2026-02-13T15:51:36.643671"
   }
 }

@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initForm();
     initVideoPreview();
     initScrollTop();
-    loadSavedApiKey();
     initLanguageSelector();
 });
 
@@ -129,24 +128,7 @@ function extractVideoId(url) {
     return null;
 }
 
-// ─── Save / Load API Key ───────────────────
-function loadSavedApiKey() {
-    const saved = localStorage.getItem('yt_gemini_key');
-    if (saved) {
-        document.getElementById('apiKey').value = saved;
-    }
 
-    // Toggle API key visibility
-    const toggleBtn = document.getElementById('toggleApiKey');
-    const apiKeyInput = document.getElementById('apiKey');
-
-    if (toggleBtn) {
-        toggleBtn.addEventListener('click', () => {
-            const type = apiKeyInput.type === 'password' ? 'text' : 'password';
-            apiKeyInput.type = type;
-        });
-    }
-}
 
 // ─── Language Selector ─────────────────────
 function initLanguageSelector() {
@@ -185,7 +167,6 @@ function initForm() {
         e.preventDefault();
 
         const url = document.getElementById('youtubeUrl').value.trim();
-        const apiKey = document.getElementById('apiKey').value.trim();
 
         if (!url) {
             showToast('Please enter a YouTube URL', 'error');
@@ -198,45 +179,90 @@ function initForm() {
             return;
         }
 
-        if (!apiKey) {
-            showToast('Please enter your Gemini API key', 'error');
-            return;
-        }
-
-        // Save API key for convenience
-        localStorage.setItem('yt_gemini_key', apiKey);
-
         // Start generating
         setGenerating(true);
         showProcessing(true);
 
         try {
             const token = localStorage.getItem('yt_token');
-
             const res = await fetch('/api/generate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ youtube_url: url, api_key: apiKey, output_language: getSelectedLanguage() })
+                body: JSON.stringify({
+                    youtube_url: url,
+                    output_language: getSelectedLanguage(),
+                    model: document.getElementById('modelSelector').value
+                })
             });
+
+            if (res.status === 401) {
+                localStorage.removeItem('yt_token');
+                localStorage.removeItem('yt_user');
+                window.location.href = '/';
+                return;
+            }
 
             const data = await res.json();
 
             if (!res.ok) {
-                throw new Error(data.detail || 'Failed to generate notes');
+                throw new Error(data.detail || 'Failed to start generation');
             }
 
-            // Render the notes
-            showProcessing(false);
-            renderNotes(data.notes);
-            showToast('Notes generated successfully! 🎉', 'success');
+            const taskId = data.task_id;
+            console.log(`Task started: ${taskId}`);
+
+            let isFinished = false; // Flag to prevent multiple completions
+
+            // Poll for status
+            const pollInterval = setInterval(async () => {
+                if (isFinished) {
+                    clearInterval(pollInterval);
+                    return;
+                }
+
+                try {
+                    const statusRes = await fetch(`/api/tasks/${taskId}`);
+                    if (!statusRes.ok) throw new Error("Network error checking status");
+
+                    const statusData = await statusRes.json();
+
+                    if (isFinished) return; // check again after await
+
+                    if (statusData.status === 'completed') {
+                        isFinished = true;
+                        clearInterval(pollInterval);
+                        showProcessing(false);
+                        renderNotes(statusData.result.notes);
+                        showToast('Notes generated successfully! 🎉', 'success');
+                        setGenerating(false);
+                    } else if (statusData.status === 'failed') {
+                        isFinished = true;
+                        clearInterval(pollInterval);
+                        showProcessing(false);
+                        showToast(`Generation failed: ${statusData.error}`, 'error');
+                        setGenerating(false);
+                    } else {
+                        // Still processing...
+                        console.log(`Task status: ${statusData.status}`);
+                        // Optional: update UI with step info if available
+                        if (statusData.result && statusData.result.step) {
+                            document.getElementById('processingStatus').textContent = `Step: ${statusData.result.step.replace('_', ' ')}...`;
+                        }
+                    }
+                } catch (pollErr) {
+                    console.error(pollErr);
+                    // Don't stop polling on transient errors, but maybe limit retries in prod
+                }
+            }, 2000);
+
+            // We don't setGenerating(false) here, only inside the poll loop when done.
 
         } catch (err) {
             showToast(err.message, 'error');
             showProcessing(false);
-        } finally {
             setGenerating(false);
         }
     });
@@ -306,14 +332,16 @@ function renderNotes(markdown) {
     resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     // Setup copy button
-    document.getElementById('btnCopy').addEventListener('click', () => {
+    const btnCopy = document.getElementById('btnCopy');
+    btnCopy.onclick = () => {
         copyNotes(markdown);
-    });
+    };
 
     // Setup download button
-    document.getElementById('btnDownload').addEventListener('click', () => {
+    const btnDownload = document.getElementById('btnDownload');
+    btnDownload.onclick = () => {
         downloadNotes(markdown);
-    });
+    };
 }
 
 // ─── Markdown → HTML Parser ────────────────

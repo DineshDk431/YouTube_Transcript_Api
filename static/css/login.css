@@ -12,20 +12,23 @@
 }
 
 :root {
-    --bg-primary: #06061a;
+    --bg-primary: #000000;
     --bg-card: rgba(255, 255, 255, 0.04);
     --border-card: rgba(255, 255, 255, 0.07);
-    --text-primary: #eeeef5;
-    --text-secondary: #9d9db8;
-    --text-muted: #5e5e78;
-    --accent-1: #6c5ce7;
-    --accent-2: #a29bfe;
-    --accent-3: #fd79a8;
-    --accent-4: #e17055;
-    --accent-5: #00b894;
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.85);
+    --text-muted: rgba(255, 255, 255, 0.5);
+    --accent-1: #ff00cc;
+    /* Hot Pink */
+    --accent-2: #33ccff;
+    /* Electric Blue */
+    --accent-3: #ffd700;
+    /* Gold */
+    --accent-4: #ff00cc;
+    --accent-5: #33ccff;
     --input-bg: rgba(255, 255, 255, 0.04);
     --input-border: rgba(255, 255, 255, 0.08);
-    --input-focus: #6c5ce7;
+    --input-focus: #ff00cc;
     --radius-lg: 24px;
     --radius-md: 16px;
     --radius-sm: 12px;
@@ -38,7 +41,9 @@ html {
 
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background: var(--bg-primary);
+    background-color: #000000;
+    /* Force black background */
+    background: #000000;
     color: var(--text-primary);
     min-height: 100vh;
     display: flex;
@@ -49,39 +54,10 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+
+
 /* ═══════ Animated Background ═══════ */
-body::before {
-    content: '';
-    position: fixed;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background:
-        radial-gradient(ellipse at 20% 50%, rgba(108, 92, 231, 0.1) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 20%, rgba(253, 121, 168, 0.07) 0%, transparent 50%),
-        radial-gradient(ellipse at 50% 80%, rgba(0, 184, 148, 0.05) 0%, transparent 50%);
-    animation: bgShift 18s ease-in-out infinite alternate;
-    z-index: 0;
-}
 
-@keyframes bgShift {
-    0% {
-        transform: translate(0, 0) rotate(0deg);
-    }
-
-    33% {
-        transform: translate(-2%, 1%) rotate(0.5deg);
-    }
-
-    66% {
-        transform: translate(1%, -1%) rotate(-0.3deg);
-    }
-
-    100% {
-        transform: translate(-1%, 2%) rotate(0.3deg);
-    }
-}
 
 /* Grain texture */
 body::after {
@@ -94,7 +70,8 @@ body::after {
     opacity: 0.015;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
     pointer-events: none;
-    z-index: 0;
+    z-index: 2;
+    /* Layer with gradient */
 }
 
 /* ═══════ Floating Particles ═══════ */
@@ -105,7 +82,8 @@ body::after {
     width: 100%;
     height: 100%;
     pointer-events: none;
-    z-index: 0;
+    z-index: 3;
+    /* Topmost background layer */
     overflow: hidden;
 }
 
@@ -891,16 +869,17 @@ body::after {
 @media (max-width: 480px) {
     .login-wrapper {
         padding: 16px;
+        max-width: 100%;
     }
 
     .login-card {
-        padding: 28px 20px;
+        padding: 24px 20px;
         border-radius: 20px;
     }
 
     .character-svg {
-        width: 130px;
-        height: 130px;
+        width: 120px;
+        height: 120px;
     }
 
     .form-title {
@@ -908,25 +887,34 @@ body::after {
     }
 
     .brand-title {
-        font-size: 1.25rem;
+        font-size: 1.2rem;
+    }
+
+    .btn-google {
+        font-size: 0.85rem;
+        padding: 12px;
     }
 }
 
 @media (max-height: 700px) {
     .character-svg {
-        width: 120px;
-        height: 120px;
+        width: 100px;
+        height: 100px;
     }
 
     .login-card {
-        padding: 24px;
+        padding: 20px;
     }
 
     .input-group {
-        margin-bottom: 14px;
+        margin-bottom: 12px;
     }
 
     .divider {
-        margin: 18px 0;
+        margin: 16px 0;
+    }
+
+    .brand {
+        margin-bottom: 16px;
     }
 }

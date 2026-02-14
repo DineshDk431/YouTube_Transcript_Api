@@ -297,10 +297,90 @@ function initFormHandlers() {
         }
     });
 
-    // Google Sign-In button
-    googleBtn.addEventListener('click', () => {
-        showToast('ℹ️ Google Sign-In requires OAuth Client ID setup. Using email/password for now.', 'info');
+    // Google Sign-In (real GIS integration)
+    initGoogleSignIn();
+}
+
+// ─── Google Identity Services ───────────────
+const GOOGLE_CLIENT_ID = '304512689210-583ithv3t34oq8cga8lcv4pv8dpd3pjs.apps.googleusercontent.com';
+
+function initGoogleSignIn() {
+    // Wait for GIS SDK to load
+    const checkGIS = setInterval(() => {
+        if (window.google && window.google.accounts) {
+            clearInterval(checkGIS);
+            setupGoogleButton();
+        }
+    }, 200);
+
+    // Timeout after 5s — show fallback button
+    setTimeout(() => {
+        clearInterval(checkGIS);
+        if (!window.google || !window.google.accounts) {
+            const fallback = document.getElementById('googleBtnFallback');
+            if (fallback) {
+                fallback.style.display = 'flex';
+                fallback.addEventListener('click', () => {
+                    showToast('ℹ️ Google Sign-In SDK failed to load. Please use email/password.', 'info');
+                });
+            }
+        }
+    }, 5000);
+}
+
+function setupGoogleButton() {
+    google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleCredential,
+        auto_select: false
     });
+
+    const container = document.getElementById('googleBtnContainer');
+    if (container) {
+        google.accounts.id.renderButton(container, {
+            theme: 'filled_black',
+            size: 'large',
+            width: '100%',
+            text: 'signin_with',
+            shape: 'pill'
+        });
+    }
+}
+
+async function handleGoogleCredential(response) {
+    try {
+        const res = await fetch('/api/google-login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ credential: response.credential })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            triggerPandaShake();
+            showToast('⚠️ Google login failed: ' + (data.detail || 'Unknown error'), 'error');
+            return;
+        }
+
+        // Store token & user info
+        localStorage.setItem('yt_token', data.token);
+        localStorage.setItem('yt_user', JSON.stringify({
+            email: data.email,
+            name: data.name,
+            photo_url: data.photo_url || ''
+        }));
+
+        showToast('Welcome, ' + data.name + '! 🎉', 'success');
+
+        setTimeout(() => {
+            window.location.href = '/dashboard';
+        }, 800);
+
+    } catch (err) {
+        triggerPandaShake();
+        showToast('⚠️ Google login failed. Please try email/password.', 'error');
+    }
 }
 
 function setLoading(loading) {
