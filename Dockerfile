@@ -9,11 +9,16 @@ ENV PYTHONUNBUFFERED True
 ENV APP_HOME /app
 WORKDIR $APP_HOME
 
-# Copy the current directory contents into the container at /app
-COPY . ./
-
-# Install any needed packages specified in requirements.txt
+# Copy only necessary files
+COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
+
+COPY main.py firebase_config.py serviceAccountKey.json ./
+COPY static ./static
+# COPY other necessary python files if needed
+COPY *.py ./
+
+
 
 # Make port 8080 available to the world outside this container
 EXPOSE 8080
