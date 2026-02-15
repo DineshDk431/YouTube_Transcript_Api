@@ -2,8 +2,6 @@
 
 > A comprehensive breakdown of every technology, skill, and tool used to build the **YouTube Transcripter** application.
 
----
-
 ## 🐍 Backend Skills
 
 ### 1. Python 3.10+
@@ -44,7 +42,6 @@
 - Temperature and token limit configuration
 - API key validation and quota handling
 
----
 
 ## 🎨 Frontend Skills
 
@@ -76,8 +73,6 @@
 - **Clipboard API** — `navigator.clipboard.writeText()` for copy feature
 - **Blob/URL API** — File download for Markdown notes
 
----
-
 ## 🎭 Animation & Design Skills
 
 ### 10. SVG Animation
@@ -99,8 +94,6 @@
 - Shimmer border effect with moving gradients
 - Input focus underline animation with `scaleX`
 - Processing spinner with rotating rings
-
----
 
 ## 🏛️ Architecture & Patterns
 
