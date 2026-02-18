@@ -2,7 +2,6 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 import os
 from dotenv import load_dotenv
-
 load_dotenv()
 
 cred_path = os.getenv("FIREBASE_CREDENTIALS", "serviceAccountKey.json")
@@ -21,7 +20,6 @@ else:
         firebase_admin.initialize_app(cred)
 
 def get_db():
-    """Get Firestore client."""
     try:
         return firestore.client()
     except Exception as e:
