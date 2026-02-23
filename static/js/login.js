@@ -302,7 +302,7 @@ function initFormHandlers() {
 }
 
 // ─── Google Identity Services ───────────────
-const GOOGLE_CLIENT_ID = '304512689210-583ithv3t34oq8cga8lcv4pv8dpd3pjs.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = '370844555954-qcv74g73n65bkkbguob9793psle5tl1o.apps.googleusercontent.com';
 
 function initGoogleSignIn() {
     // Wait for GIS SDK to load
