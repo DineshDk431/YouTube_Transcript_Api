@@ -335,7 +335,6 @@ def get_transcript(video_id: str) -> str:
         proxies = {"https": proxy_url} if proxy_url else None
         
         try:
-            # ytt = YouTubeTranscriptApi() # Remove instantiation
             transcript_data = YouTubeTranscriptApi.get_transcript(video_id, proxies=proxies, cookies=cookie_file_path)
             full_text = " ".join([entry['text'] for entry in transcript_data])
             return full_text
@@ -351,6 +350,9 @@ def get_transcript(video_id: str) -> str:
                 'writeautomaticsub': True,
                 'subtitleslangs': ['en'],
                 'quiet': True,
+                'no_warnings': True,
+                'ignore_no_formats_error': True,
+                'format': 'best',
             }
             
             if cookie_file_path:
@@ -361,21 +363,70 @@ def get_transcript(video_id: str) -> str:
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=False)
-                # Helper to extract text from subs would be needed here for real text
-                # But confirming it works is step 1.
-                # Use 'get_subtitles' if available or parse info['subtitles']
-                # For now, let's just return a success message or minimal text if found
                 subs = info.get('subtitles') or info.get('automatic_captions')
                 
-                # Try to download and read the vtt/ttml if possible or just use what we have.
-                # Since we can't easily parse VTT without another lib, we might need a simpler way.
-                # Actually, yt-dlp can return the url of the caption track.
-                
                 if subs:
-                     return "Transcript fetched via yt-dlp (Content parsing pending - Please use standard API if possible)"
+                    # Try to get English subtitles, fall back to any available
+                    sub_entries = subs.get('en') or next(iter(subs.values()), None)
+                    if sub_entries:
+                        # Find json3 or vtt format URL
+                        sub_url = None
+                        for entry in sub_entries:
+                            if entry.get('ext') == 'json3':
+                                sub_url = entry.get('url')
+                                break
+                        if not sub_url:
+                            for entry in sub_entries:
+                                if entry.get('ext') == 'vtt':
+                                    sub_url = entry.get('url')
+                                    break
+                        if not sub_url and sub_entries:
+                            sub_url = sub_entries[0].get('url')
+                        
+                        if sub_url:
+                            # Fetch and parse the subtitle content
+                            resp = httpx.get(sub_url, timeout=15)
+                            resp.raise_for_status()
+                            content = resp.text
+                            
+                            # Try JSON3 format first
+                            try:
+                                sub_json = json.loads(content)
+                                events = sub_json.get('events', [])
+                                texts = []
+                                for event in events:
+                                    segs = event.get('segs', [])
+                                    for seg in segs:
+                                        text = seg.get('utf8', '').strip()
+                                        if text and text != '\n':
+                                            texts.append(text)
+                                if texts:
+                                    return " ".join(texts)
+                            except (json.JSONDecodeError, AttributeError):
+                                pass
+                            
+                            # Fallback: parse VTT/SRT — strip timestamps and formatting
+                            import re as re_mod
+                            lines = content.split('\n')
+                            text_lines = []
+                            for line in lines:
+                                line = line.strip()
+                                # Skip empty, timestamp, header, and style lines
+                                if not line or '-->' in line or line.startswith('WEBVTT') or line.startswith('Kind:') or line.startswith('Language:') or line.isdigit():
+                                    continue
+                                # Remove HTML tags
+                                clean = re_mod.sub(r'<[^>]+>', '', line)
+                                if clean.strip():
+                                    text_lines.append(clean.strip())
+                            if text_lines:
+                                return " ".join(text_lines)
+                    
+                    raise Exception("Found subtitles but couldn't extract text")
                 else: 
-                     raise Exception("No subtitles found in yt-dlp either")
+                    raise Exception("No subtitles found via yt-dlp either")
 
+    except HTTPException:
+        raise
     except Exception as e:
         error_msg = str(e)
         if "Could not retrieve a transcript" in error_msg:
