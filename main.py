@@ -551,8 +551,9 @@ async def generate_notes_with_gemini(transcript: str, api_key: str, language: st
 
 
 async def generate_notes_with_qwen3(transcript: str, language: str = "English", role_modifier: str = "") -> str:
-    """Fallback: Generate notes using Qwen (Non-blocking)."""
+    """Fallback: Generate notes using Qwen via HuggingFace (Non-blocking)."""
     if not HF_API_TOKEN:
+        print("⚠️ HF_TOKEN not set, skipping Qwen")
         return None
 
     try:
@@ -561,33 +562,51 @@ async def generate_notes_with_qwen3(transcript: str, language: str = "English", 
             prompt = prompt + role_modifier
 
         client = InferenceClient(api_key=HF_API_TOKEN)
-        model_id = "Qwen/Qwen2.5-72B-Instruct"
+
+        # Try models in order of preference (free-tier compatible)
+        models_to_try = [
+            "Qwen/Qwen2.5-Coder-32B-Instruct",
+            "Qwen/Qwen2.5-72B-Instruct",
+            "meta-llama/Llama-3.1-70B-Instruct",
+            "mistralai/Mixtral-8x7B-Instruct-v0.1",
+        ]
 
         messages = [
             {"role": "system", "content": "You are an expert educational note-taker."},
             {"role": "user", "content": prompt}
         ]
 
-        # Run blocking call in executor
-        loop = asyncio.get_running_loop()
-        response = await loop.run_in_executor(
-            None,
-            functools.partial(
-                client.chat_completion,
-                model=model_id,
-                messages=messages,
-                max_tokens=8192,
-                temperature=0.7,
-                stream=False
-            )
-        )
+        last_error = None
+        for model_id in models_to_try:
+            try:
+                print(f"🤖 Trying model: {model_id}")
+                loop = asyncio.get_running_loop()
+                response = await loop.run_in_executor(
+                    None,
+                    functools.partial(
+                        client.chat_completion,
+                        model=model_id,
+                        messages=messages,
+                        max_tokens=8192,
+                        temperature=0.7,
+                        stream=False
+                    )
+                )
 
-        if response.choices and response.choices[0].message.content:
-            return response.choices[0].message.content
+                if response.choices and response.choices[0].message.content:
+                    print(f"✅ Successfully generated with {model_id}")
+                    return response.choices[0].message.content
+                    
+            except Exception as model_err:
+                last_error = model_err
+                print(f"⚠️ Model {model_id} failed: {model_err}")
+                continue
+
+        print(f"❌ All Qwen/HF models failed. Last error: {last_error}")
         return None
 
     except Exception as e:
-        print(f"⚠️ Qwen fallback failed: {e}")
+        print(f"⚠️ Qwen generation failed entirely: {e}")
         return None
 
 @app.get("/", response_class=HTMLResponse)
