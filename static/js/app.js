@@ -305,7 +305,7 @@ function showProcessing(show) {
             step1.classList.remove('active');
             step1.classList.add('done');
             step2.classList.add('active');
-            document.getElementById('processingStatus').textContent = 'Processing with Gemini AI...';
+            document.getElementById('processingStatus').textContent = `Processing with ${document.getElementById('modelSelector').value === 'qwen' ? 'Qwen AI' : 'Gemini AI'}...`;
         }, 2000);
 
         setTimeout(() => {
