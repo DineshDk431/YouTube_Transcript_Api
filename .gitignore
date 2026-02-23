@@ -1,0 +1,28 @@
+__pycache__/
+.venv/
+venv/
+*.pyc
+.env
+.DS_Store
+
+# Exclude test and verification files
+verify_deployment.py
+preview_server.py
+test_*.py
+tests/
+
+# Exclude utility/debug scripts
+check_len.py
+debug_transcript.py
+inspect_transcript_api.py
+migrate_to_firebase.py
+
+# Exclude user data
+users.json
+data/history/*.json
+
+# Secrets
+serviceAccountKey.json
+
+# Logs
+push_log.txt

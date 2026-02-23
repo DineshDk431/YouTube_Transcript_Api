@@ -1,0 +1,11 @@
+# Force LF line endings in the repo for Linux deployment
+* text=auto eol=lf
+*.py text eol=lf
+*.txt text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.md text eol=lf
