@@ -260,6 +260,8 @@ function initForm() {
                                 friendlyMsg = `${action} ${current} of ${total}...`;
                             } else if (step === 'merging_notes' || step === 'merging_key_points') {
                                 friendlyMsg = 'Merging all sections into final notes...';
+                            } else if (step === 'gemini_direct_video') {
+                                friendlyMsg = '🎬 Processing video directly with Gemini AI...';
                             }
 
                             document.getElementById('processingStatus').textContent = friendlyMsg;
