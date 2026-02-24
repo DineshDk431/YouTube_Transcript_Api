@@ -22,7 +22,54 @@
 
 ---
 
-## 🚀 Quick Start
+## � How It Works
+
+```mermaid
+flowchart TD
+    A["🔗 Paste YouTube URL"] --> B["🔍 Extract Video ID"]
+    B --> C["📜 Fetch Transcript"]
+    
+    C --> D["Method 1: youtube-transcript-api"]
+    C --> E["Method 2: Innertube API (5 clients)"]
+    C --> F["Method 3: yt-dlp"]
+    
+    D -->|Success| G["📏 Detect Video Length"]
+    E -->|Success| G
+    F -->|Success| G
+    
+    D -->|All Failed| H["🎬 Gemini Direct Mode"]
+    E -->|All Failed| H
+    F -->|All Failed| H
+    
+    H --> K["✨ AI Notes Generated"]
+
+    G --> G1["📗 Short < 15 min"]
+    G --> G2["📘 Medium 15-60 min"]
+    G --> G3["📕 Long > 60 min"]
+    
+    G1 -->|"Full transcript"| I["🤖 AI Generation"]
+    G2 -->|"Chunk → Summarize → Merge"| I
+    G3 -->|"Chunk → Key Points → Merge"| I
+    
+    I --> J{"Model Selection"}
+    J -->|Primary| J1["Gemini 2.0 Flash"]
+    J -->|Fallback| J2["Qwen3-32B via Groq"]
+    
+    J1 --> K
+    J2 --> K
+    
+    K --> L["💾 Save to Firebase"]
+    L --> M["📥 Display & Download Notes"]
+
+    style A fill:#667eea,color:#fff
+    style K fill:#48bb78,color:#fff
+    style H fill:#ed8936,color:#fff
+    style M fill:#667eea,color:#fff
+```
+
+---
+
+## �🚀 Quick Start
 
 ```bash
 # Clone
