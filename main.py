@@ -431,11 +431,101 @@ async def process_note_generation(task_id: str, req: GenerateRequest, user_email
         update_task_status(task_id, "processing", {"step": "extracting_video_id"})
         video_id = extract_video_id(req.youtube_url)
 
-        # Step 2: Fetch transcript
+        # Step 2: Fetch transcript (with Gemini direct fallback)
         update_task_status(task_id, "processing", {"step": "fetching_transcript"})
-        transcript = get_transcript(video_id)
+        transcript = None
+        use_gemini_direct = False
+        
+        try:
+            transcript = get_transcript(video_id)
+            if len(transcript) < 50:
+                raise ValueError("Transcript too short")
+        except Exception as transcript_err:
+            print(f"⚠️ All transcript methods failed: {transcript_err}")
+            print("🎬 Falling back to Gemini direct YouTube video processing...")
+            use_gemini_direct = True
+        
+        # ═══════ GEMINI DIRECT MODE (no transcript needed) ═══════
+        if use_gemini_direct:
+            update_task_status(task_id, "processing", {"step": "gemini_direct_video"})
+            
+            role_instructions = {
+                "child": "\n\n🧒 AUDIENCE: CHILD. Use VERY SIMPLE language, fun analogies, emojis.",
+                "student": "\n\n🎓 AUDIENCE: STUDENT. Clear explanations, study tips, key points.",
+                "teacher": "\n\n👨\u200d🏫 AUDIENCE: TEACHER. Professional, pedagogical insights.",
+                "industry": "\n\n💼 AUDIENCE: PROFESSIONAL. Technical, actionable insights."
+            }
+            role_mod = role_instructions.get(user_role, role_instructions["student"])
+            
+            youtube_url = f"https://www.youtube.com/watch?v={video_id}"
+            direct_prompt = f"""Watch this YouTube video and generate comprehensive, professional notes entirely in {req.output_language}.
 
-        if len(transcript) < 50:
+YouTube Video: {youtube_url}
+
+Generate notes with this structure:
+# 📺 Video Notes
+## 🎯 Main Topic
+## 📌 Key Points (numbered, with explanations and examples)
+## 🧠 Important Concepts (table format)
+## ⚡ Quick Summary
+## 🎓 Conclusion
+
+Use emojis, be detailed, include real-world examples.{role_mod}"""
+            
+            try:
+                loop = asyncio.get_running_loop()
+                client = genai.Client(api_key=GEMINI_API_KEY)
+                response = await loop.run_in_executor(
+                    None,
+                    functools.partial(
+                        client.models.generate_content,
+                        model="gemini-2.0-flash",
+                        contents=direct_prompt,
+                        config=types.GenerateContentConfig(
+                            temperature=0.7,
+                            max_output_tokens=8192,
+                        )
+                    )
+                )
+                notes = response.text if response.text else None
+            except Exception as gemini_err:
+                print(f"⚠️ Gemini direct also failed: {gemini_err}")
+                notes = None
+                
+            if not notes:
+                # Last resort: try Qwen with a simple prompt
+                try:
+                    notes = await generate_notes_with_qwen3_raw(
+                        f"Generate comprehensive notes about a YouTube video (ID: {video_id}). "
+                        f"The video is at: {youtube_url}. "
+                        f"Create detailed educational notes in {req.output_language}.",
+                        req.output_language, role_mod
+                    )
+                except Exception:
+                    pass
+            
+            if not notes:
+                raise ValueError("Could not generate notes — transcript fetch and direct video processing both failed.")
+            
+            # Save and return
+            update_task_status(task_id, "completed", {"step": "done"}, result=notes)
+            try:
+                db = get_db()
+                db.collection("history").add({
+                    "email": user_email,
+                    "url": req.youtube_url,
+                    "title": f"Video {video_id}",
+                    "notes": notes,
+                    "model": "gemini-direct",
+                    "language": req.output_language,
+                    "timestamp": datetime.utcnow().isoformat()
+                })
+            except Exception as db_err:
+                print(f"⚠️ History save failed: {db_err}")
+            return
+        
+        # ═══════ NORMAL MODE (transcript available) ═══════
+        if not transcript or len(transcript) < 50:
             raise ValueError("Transcript is too short")
 
         transcript_len = len(transcript)
@@ -690,91 +780,99 @@ def get_transcript(video_id: str) -> str:
         except Exception as e:
             print(f"⚠️ Method 1 failed: {e}")
 
-        # ─── Method 2: YouTube Innertube Player API (bypasses watch page) ───
-        try:
-            print("🔄 Trying innertube player API...")
-            innertube_url = "https://www.youtube.com/youtubei/v1/player"
-            payload = {
-                "context": {
-                    "client": {
-                        "clientName": "WEB",
-                        "clientVersion": "2.20241201.00.00",
-                        "hl": "en",
-                        "gl": "US",
-                    }
-                },
-                "videoId": video_id,
-            }
-            headers = {
-                "Content-Type": "application/json",
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            }
-            
-            resp = httpx.post(innertube_url, json=payload, headers=headers, timeout=15)
-            resp.raise_for_status()
-            data = resp.json()
-            
-            captions = data.get("captions", {}).get("playerCaptionsTracklistRenderer", {}).get("captionTracks", [])
-            
-            if not captions:
-                raise Exception("No caption tracks in innertube response")
-            
-            # Prefer English, but take any available
-            caption_url = None
-            for track in captions:
-                if track.get("languageCode", "").startswith("en"):
-                    caption_url = track.get("baseUrl")
-                    break
-            if not caption_url:
-                caption_url = captions[0].get("baseUrl")
-            
-            if not caption_url:
-                raise Exception("No caption URL found")
-            
-            # Add fmt=json3 for JSON format
-            if "fmt=" not in caption_url:
-                caption_url += "&fmt=json3"
-            
-            cap_resp = httpx.get(caption_url, headers=headers, timeout=15)
-            cap_resp.raise_for_status()
-            
-            # Try JSON3 format
+        # ─── Method 2: YouTube Innertube Player API (multiple client types) ───
+        innertube_clients = [
+            {
+                "name": "ANDROID",
+                "client": {"clientName": "ANDROID", "clientVersion": "19.09.37", "androidSdkVersion": 30, "hl": "en", "gl": "US"},
+                "ua": "com.google.android.youtube/19.09.37 (Linux; U; Android 11)"
+            },
+            {
+                "name": "IOS",
+                "client": {"clientName": "IOS", "clientVersion": "19.09.3", "deviceModel": "iPhone14,3", "hl": "en", "gl": "US"},
+                "ua": "com.google.ios.youtube/19.09.3 (iPhone14,3; U; CPU iPhone OS 15_6 like Mac OS X)"
+            },
+            {
+                "name": "MWEB",
+                "client": {"clientName": "MWEB", "clientVersion": "2.20241201.00.00", "hl": "en", "gl": "US"},
+                "ua": "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile Safari/537.36"
+            },
+            {
+                "name": "TV_EMBED",
+                "client": {"clientName": "TVHTML5_SIMPLY_EMBEDDED_PLAYER", "clientVersion": "2.0", "hl": "en", "gl": "US"},
+                "ua": "Mozilla/5.0"
+            },
+            {
+                "name": "WEB",
+                "client": {"clientName": "WEB", "clientVersion": "2.20241201.00.00", "hl": "en", "gl": "US"},
+                "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            },
+        ]
+        import xml.etree.ElementTree as ET
+        for ic in innertube_clients:
             try:
-                cap_json = cap_resp.json()
-                events = cap_json.get("events", [])
-                texts = []
-                for event in events:
-                    for seg in event.get("segs", []):
-                        text = seg.get("utf8", "").strip()
-                        if text and text != "\n":
-                            texts.append(text)
-                if texts:
-                    full_text = " ".join(texts)
-                    print(f"✅ Method 2 (innertube JSON3): {len(full_text)} chars")
-                    return full_text
-            except (json.JSONDecodeError, ValueError):
-                pass
-            
-            # Fallback: parse XML captions
-            import xml.etree.ElementTree as ET
-            content = cap_resp.text
-            try:
-                root = ET.fromstring(content)
-                texts = []
-                for elem in root.iter("text"):
-                    if elem.text:
-                        text = elem.text.replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">").replace("&#39;", "'").replace("&quot;", '"')
-                        texts.append(text.strip())
-                if texts:
-                    full_text = " ".join(texts)
-                    print(f"✅ Method 2 (innertube XML): {len(full_text)} chars")
-                    return full_text
-            except ET.ParseError:
-                pass
-            
-            raise Exception("Could not parse innertube captions")
-        except Exception as e:
-            print(f"⚠️ Method 2 (innertube) failed: {e}")
+                print(f"🔄 Trying innertube ({ic['name']})...")
+                resp = httpx.post(
+                    "https://www.youtube.com/youtubei/v1/player?prettyPrint=false",
+                    json={"context": {"client": ic["client"]}, "videoId": video_id},
+                    headers={"Content-Type": "application/json", "User-Agent": ic["ua"]},
+                    timeout=15
+                )
+                if resp.status_code != 200:
+                    continue
+                data = resp.json()
+                caps = data.get("captions", {}).get("playerCaptionsTracklistRenderer", {}).get("captionTracks", [])
+                if not caps:
+                    print(f"  {ic['name']}: no captions")
+                    continue
+                
+                # Prefer English
+                cap_url = None
+                for track in caps:
+                    if track.get("languageCode", "").startswith("en"):
+                        cap_url = track.get("baseUrl")
+                        break
+                if not cap_url:
+                    cap_url = caps[0].get("baseUrl")
+                if not cap_url:
+                    continue
+                
+                # Fetch captions (default XML format)
+                cap_resp = httpx.get(cap_url, timeout=15)
+                cap_resp.raise_for_status()
+                
+                # Try XML parsing
+                try:
+                    root = ET.fromstring(cap_resp.text)
+                    texts = [e.text.strip() for e in root.iter("text") if e.text]
+                    if texts:
+                        full_text = " ".join(texts)
+                        print(f"✅ Method 2 (innertube/{ic['name']}): {len(full_text)} chars")
+                        return full_text
+                except ET.ParseError:
+                    pass
+                
+                # Try JSON3
+                try:
+                    json3_url = cap_url + ("&fmt=json3" if "fmt=" not in cap_url else "")
+                    j3_resp = httpx.get(json3_url, timeout=15)
+                    cap_json = j3_resp.json()
+                    texts = []
+                    for event in cap_json.get("events", []):
+                        for seg in event.get("segs", []):
+                            t = seg.get("utf8", "").strip()
+                            if t and t != "\n":
+                                texts.append(t)
+                    if texts:
+                        full_text = " ".join(texts)
+                        print(f"✅ Method 2 (innertube/{ic['name']} JSON3): {len(full_text)} chars")
+                        return full_text
+                except Exception:
+                    pass
+                    
+            except Exception as e:
+                print(f"  {ic['name']}: {e}")
+        print("⚠️ Method 2 (all innertube clients) failed")
 
         # ─── Method 3: yt-dlp fallback ───
         try:
