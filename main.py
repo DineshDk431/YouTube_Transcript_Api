@@ -654,12 +654,11 @@ def extract_video_id(url: str) -> str:
     )
 
 def get_transcript(video_id: str) -> str:
-    """Fetch transcript for a YouTube video with fallback and cookies support."""
+    """Fetch transcript with 3 fallback methods to bypass YouTube cloud IP blocks."""
     cookies_content = os.getenv("YOUTUBE_COOKIES")
     proxy_url = os.getenv("YOUTUBE_PROXY")
     cookie_file_path = None
     
-    # Create temp cookie file if env var exists
     if cookies_content:
         try:
             fd, cookie_file_path = tempfile.mkstemp(suffix=".txt", text=True)
@@ -669,45 +668,116 @@ def get_transcript(video_id: str) -> str:
             print(f"⚠️ Failed to create cookie file: {e}")
 
     try:
-        # ─── Method 1: youtube-transcript-api v1.2+ (instance-based API) ───
+        # ─── Method 1: youtube-transcript-api v1.2+ ───
         try:
             api = YouTubeTranscriptApi()
-            
-            # Try fetching transcript — tries English first, then falls back
             transcript_result = None
             try:
-                # Try English transcript first
                 transcript_result = api.fetch(video_id, languages=['en'])
             except Exception:
                 try:
-                    # Try without language preference (gets default)
                     transcript_result = api.fetch(video_id)
                 except Exception:
-                    # Try listing available transcripts and pick any
-                    try:
-                        transcript_list = api.list(video_id)
-                        # Get the first available transcript
-                        for t in transcript_list:
-                            try:
-                                transcript_result = api.fetch(video_id, languages=[t.language_code])
-                                break
-                            except Exception:
-                                continue
-                    except Exception as list_err:
-                        print(f"⚠️ Could not list transcripts: {list_err}")
+                    pass
             
             if transcript_result and transcript_result.snippets:
-                full_text = " ".join([snippet.text for snippet in transcript_result.snippets])
+                full_text = " ".join([s.text for s in transcript_result.snippets])
                 if full_text.strip():
-                    print(f"✅ Transcript fetched via youtube-transcript-api ({len(full_text)} chars)")
+                    print(f"✅ Method 1 (youtube-transcript-api): {len(full_text)} chars")
                     return full_text
             
-            raise Exception("youtube-transcript-api returned empty transcript")
-            
+            raise Exception("Empty result")
         except Exception as e:
-            print(f"⚠️ YouTubeTranscriptApi failed: {e}")
+            print(f"⚠️ Method 1 failed: {e}")
+
+        # ─── Method 2: YouTube Innertube Player API (bypasses watch page) ───
+        try:
+            print("🔄 Trying innertube player API...")
+            innertube_url = "https://www.youtube.com/youtubei/v1/player"
+            payload = {
+                "context": {
+                    "client": {
+                        "clientName": "WEB",
+                        "clientVersion": "2.20241201.00.00",
+                        "hl": "en",
+                        "gl": "US",
+                    }
+                },
+                "videoId": video_id,
+            }
+            headers = {
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            }
             
-            # Fallback to yt-dlp
+            resp = httpx.post(innertube_url, json=payload, headers=headers, timeout=15)
+            resp.raise_for_status()
+            data = resp.json()
+            
+            captions = data.get("captions", {}).get("playerCaptionsTracklistRenderer", {}).get("captionTracks", [])
+            
+            if not captions:
+                raise Exception("No caption tracks in innertube response")
+            
+            # Prefer English, but take any available
+            caption_url = None
+            for track in captions:
+                if track.get("languageCode", "").startswith("en"):
+                    caption_url = track.get("baseUrl")
+                    break
+            if not caption_url:
+                caption_url = captions[0].get("baseUrl")
+            
+            if not caption_url:
+                raise Exception("No caption URL found")
+            
+            # Add fmt=json3 for JSON format
+            if "fmt=" not in caption_url:
+                caption_url += "&fmt=json3"
+            
+            cap_resp = httpx.get(caption_url, headers=headers, timeout=15)
+            cap_resp.raise_for_status()
+            
+            # Try JSON3 format
+            try:
+                cap_json = cap_resp.json()
+                events = cap_json.get("events", [])
+                texts = []
+                for event in events:
+                    for seg in event.get("segs", []):
+                        text = seg.get("utf8", "").strip()
+                        if text and text != "\n":
+                            texts.append(text)
+                if texts:
+                    full_text = " ".join(texts)
+                    print(f"✅ Method 2 (innertube JSON3): {len(full_text)} chars")
+                    return full_text
+            except (json.JSONDecodeError, ValueError):
+                pass
+            
+            # Fallback: parse XML captions
+            import xml.etree.ElementTree as ET
+            content = cap_resp.text
+            try:
+                root = ET.fromstring(content)
+                texts = []
+                for elem in root.iter("text"):
+                    if elem.text:
+                        text = elem.text.replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">").replace("&#39;", "'").replace("&quot;", '"')
+                        texts.append(text.strip())
+                if texts:
+                    full_text = " ".join(texts)
+                    print(f"✅ Method 2 (innertube XML): {len(full_text)} chars")
+                    return full_text
+            except ET.ParseError:
+                pass
+            
+            raise Exception("Could not parse innertube captions")
+        except Exception as e:
+            print(f"⚠️ Method 2 (innertube) failed: {e}")
+
+        # ─── Method 3: yt-dlp fallback ───
+        try:
             print("🔄 Trying yt-dlp fallback...")
             url = f"https://www.youtube.com/watch?v={video_id}"
             ydl_opts = {
@@ -720,10 +790,8 @@ def get_transcript(video_id: str) -> str:
                 'ignore_no_formats_error': True,
                 'format': 'best',
             }
-            
             if cookie_file_path:
                 ydl_opts['cookiefile'] = cookie_file_path
-            
             if proxy_url:
                 ydl_opts['proxy'] = proxy_url
 
@@ -732,10 +800,8 @@ def get_transcript(video_id: str) -> str:
                 subs = info.get('subtitles') or info.get('automatic_captions')
                 
                 if subs:
-                    # Try to get English subtitles, fall back to any available
                     sub_entries = subs.get('en') or next(iter(subs.values()), None)
                     if sub_entries:
-                        # Find json3 or vtt format URL
                         sub_url = None
                         for entry in sub_entries:
                             if entry.get('ext') == 'json3':
@@ -750,46 +816,47 @@ def get_transcript(video_id: str) -> str:
                             sub_url = sub_entries[0].get('url')
                         
                         if sub_url:
-                            # Fetch and parse the subtitle content
-                            resp = httpx.get(sub_url, timeout=15)
-                            resp.raise_for_status()
-                            content = resp.text
+                            sub_resp = httpx.get(sub_url, timeout=15)
+                            sub_resp.raise_for_status()
+                            content = sub_resp.text
                             
-                            # Try JSON3 format first
                             try:
                                 sub_json = json.loads(content)
                                 events = sub_json.get('events', [])
                                 texts = []
                                 for event in events:
-                                    segs = event.get('segs', [])
-                                    for seg in segs:
+                                    for seg in event.get('segs', []):
                                         text = seg.get('utf8', '').strip()
                                         if text and text != '\n':
                                             texts.append(text)
                                 if texts:
-                                    return " ".join(texts)
+                                    full_text = " ".join(texts)
+                                    print(f"✅ Method 3 (yt-dlp): {len(full_text)} chars")
+                                    return full_text
                             except (json.JSONDecodeError, AttributeError):
                                 pass
                             
-                            # Fallback: parse VTT/SRT — strip timestamps and formatting
-                            import re as re_mod
                             lines = content.split('\n')
                             text_lines = []
                             for line in lines:
                                 line = line.strip()
-                                # Skip empty, timestamp, header, and style lines
                                 if not line or '-->' in line or line.startswith('WEBVTT') or line.startswith('Kind:') or line.startswith('Language:') or line.isdigit():
                                     continue
-                                # Remove HTML tags
-                                clean = re_mod.sub(r'<[^>]+>', '', line)
+                                clean = re.sub(r'<[^>]+>', '', line)
                                 if clean.strip():
                                     text_lines.append(clean.strip())
                             if text_lines:
-                                return " ".join(text_lines)
+                                full_text = " ".join(text_lines)
+                                print(f"✅ Method 3 (yt-dlp VTT): {len(full_text)} chars")
+                                return full_text
                     
                     raise Exception("Found subtitles but couldn't extract text")
                 else: 
-                    raise Exception("No subtitles found via yt-dlp either")
+                    raise Exception("No subtitles found via yt-dlp")
+        except Exception as e:
+            print(f"⚠️ Method 3 (yt-dlp) failed: {e}")
+
+        raise Exception("All 3 transcript methods failed")
 
     except HTTPException:
         raise
@@ -800,12 +867,13 @@ def get_transcript(video_id: str) -> str:
         raise HTTPException(status_code=500, detail=f"Failed to fetch transcript: {error_msg}")
     
     finally:
-        # Cleanup temp cookie file
         if cookie_file_path and os.path.exists(cookie_file_path):
             try:
                 os.remove(cookie_file_path)
             except Exception as e:
                 print(f"⚠️ Failed to remove temp cookie file: {e}")
+
+
 
 GEMINI_PROMPT = """You are an expert multilingual note-taking assistant with translation capabilities.
 
