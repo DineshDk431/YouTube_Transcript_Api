@@ -10,13 +10,14 @@ from pathlib import Path
 import shutil
 import uuid
 import httpx
+from urllib.parse import unquote, urlparse, parse_qs
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import tempfile
 
 from dotenv import load_dotenv
-from huggingface_hub import InferenceClient
+from groq import Groq
 from firebase_admin import firestore
 from firebase_config import get_db, firebase_admin
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -43,7 +44,7 @@ ACCESS_TOKEN_EXPIRE_HOURS = 24
 # HISTORY_DIR removed in favor of Firestore
 UPLOADS_DIR = Path("static/uploads")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-HF_API_TOKEN = os.getenv("HF_TOKEN")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 SMTP_EMAIL = os.getenv("SMTP_EMAIL")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 SMTP_SERVER = "smtp.gmail.com"
@@ -299,7 +300,34 @@ def verify_token(token: str) -> dict:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
 def extract_video_id(url: str) -> str:
-    """Extract YouTube video ID from various URL formats."""
+    """Extract YouTube video ID from various URL formats, including encoded URLs."""
+    # Step 1: Decode any URL-encoded characters (%3F -> ?, %3D -> =, etc.)
+    url = unquote(url).strip()
+    
+    # Step 2: Try parsing as a proper URL first (most reliable)
+    try:
+        parsed = urlparse(url)
+        if parsed.hostname in ('www.youtube.com', 'youtube.com', 'm.youtube.com'):
+            if parsed.path == '/watch':
+                qs = parse_qs(parsed.query)
+                if 'v' in qs:
+                    vid = qs['v'][0]
+                    if re.match(r'^[a-zA-Z0-9_-]{11}$', vid):
+                        return vid
+            # Handle /embed/, /shorts/, /v/ paths
+            for prefix in ('/embed/', '/shorts/', '/v/'):
+                if parsed.path.startswith(prefix):
+                    vid = parsed.path[len(prefix):].split('/')[0].split('?')[0]
+                    if re.match(r'^[a-zA-Z0-9_-]{11}$', vid):
+                        return vid
+        elif parsed.hostname == 'youtu.be':
+            vid = parsed.path.lstrip('/').split('/')[0].split('?')[0]
+            if re.match(r'^[a-zA-Z0-9_-]{11}$', vid):
+                return vid
+    except Exception:
+        pass
+    
+    # Step 3: Fallback regex patterns for edge cases
     patterns = [
         r'(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})',
         r'(?:youtu\.be\/)([a-zA-Z0-9_-]{11})',
@@ -551,9 +579,9 @@ async def generate_notes_with_gemini(transcript: str, api_key: str, language: st
 
 
 async def generate_notes_with_qwen3(transcript: str, language: str = "English", role_modifier: str = "") -> str:
-    """Fallback: Generate notes using Qwen via HuggingFace (Non-blocking)."""
-    if not HF_API_TOKEN:
-        print("⚠️ HF_TOKEN not set, skipping Qwen")
+    """Fallback: Generate notes using Qwen3 via Groq Cloud API (Non-blocking)."""
+    if not GROQ_API_KEY:
+        print("⚠️ GROQ_API_KEY not set, skipping Qwen")
         return None
 
     try:
@@ -561,14 +589,13 @@ async def generate_notes_with_qwen3(transcript: str, language: str = "English", 
         if role_modifier:
             prompt = prompt + role_modifier
 
-        client = InferenceClient(api_key=HF_API_TOKEN)
+        client = Groq(api_key=GROQ_API_KEY)
 
-        # Try models in order of preference (free-tier compatible)
+        # Try Groq models in order of preference (all free-tier compatible)
         models_to_try = [
-            "Qwen/Qwen2.5-Coder-32B-Instruct",
-            "Qwen/Qwen2.5-72B-Instruct",
-            "meta-llama/Llama-3.1-70B-Instruct",
-            "mistralai/Mixtral-8x7B-Instruct-v0.1",
+            "qwen/qwen3-32b",
+            "meta-llama/llama-4-scout-17b-16e-instruct",
+            "mixtral-8x7b-32768",
         ]
 
         messages = [
@@ -577,36 +604,36 @@ async def generate_notes_with_qwen3(transcript: str, language: str = "English", 
         ]
 
         last_error = None
+        loop = asyncio.get_running_loop()
+
         for model_id in models_to_try:
             try:
-                print(f"🤖 Trying model: {model_id}")
-                loop = asyncio.get_running_loop()
+                print(f"🤖 Trying Groq model: {model_id}")
                 response = await loop.run_in_executor(
                     None,
                     functools.partial(
-                        client.chat_completion,
+                        client.chat.completions.create,
                         model=model_id,
                         messages=messages,
                         max_tokens=8192,
                         temperature=0.7,
-                        stream=False
                     )
                 )
 
                 if response.choices and response.choices[0].message.content:
-                    print(f"✅ Successfully generated with {model_id}")
+                    print(f"✅ Successfully generated with Groq/{model_id}")
                     return response.choices[0].message.content
                     
             except Exception as model_err:
                 last_error = model_err
-                print(f"⚠️ Model {model_id} failed: {model_err}")
+                print(f"⚠️ Groq model {model_id} failed: {model_err}")
                 continue
 
-        print(f"❌ All Qwen/HF models failed. Last error: {last_error}")
+        print(f"❌ All Groq models failed. Last error: {last_error}")
         return None
 
     except Exception as e:
-        print(f"⚠️ Qwen generation failed entirely: {e}")
+        print(f"⚠️ Groq generation failed entirely: {e}")
         return None
 
 @app.get("/", response_class=HTMLResponse)
