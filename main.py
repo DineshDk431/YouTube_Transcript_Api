@@ -507,19 +507,33 @@ Use emojis, be detailed, include real-world examples.{role_mod}"""
             if not notes:
                 raise ValueError("Could not generate notes — transcript fetch and direct video processing both failed.")
             
+            # Strip model thinking tags (<think>...</think>)
+            notes = re.sub(r'<think>.*?</think>', '', notes, flags=re.DOTALL).strip()
+            
             # Save and return
-            update_task_status(task_id, "completed", {"step": "done"}, result=notes)
+            title_line = notes.split('\n')[0][:80].strip('#').strip() if notes else "Untitled Notes"
+            note_id = secrets.token_hex(8)
+            result_payload = {
+                "notes": notes,
+                "video_id": video_id,
+                "note_id": note_id,
+                "title": title_line
+            }
+            update_task_status(task_id, "completed", result=result_payload)
+            
+            # Save history
             try:
-                db = get_db()
-                db.collection("history").add({
-                    "email": user_email,
-                    "url": req.youtube_url,
-                    "title": f"Video {video_id}",
-                    "notes": notes,
-                    "model": "gemini-direct",
+                history_entry = {
+                    "id": note_id,
+                    "title": title_line,
+                    "video_id": video_id,
+                    "youtube_url": req.youtube_url,
                     "language": req.output_language,
-                    "timestamp": datetime.utcnow().isoformat()
-                })
+                    "notes": notes,
+                    "transcript_length": 0,
+                    "created_at": datetime.utcnow().isoformat()
+                }
+                save_history_item(user_email, history_entry)
             except Exception as db_err:
                 print(f"⚠️ History save failed: {db_err}")
             return
@@ -648,6 +662,9 @@ Use emojis, be detailed, include real-world examples.{role_mod}"""
 
         if not notes:
             raise ValueError("AI generation failed with selected model")
+        
+        # Strip model thinking tags (<think>...</think>)
+        notes = re.sub(r'<think>.*?</think>', '', notes, flags=re.DOTALL).strip()
 
         # Step 4: Save History
         update_task_status(task_id, "processing", {"step": "saving_history"})

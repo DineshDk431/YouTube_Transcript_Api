@@ -365,6 +365,8 @@ function markdownToHtml(md) {
 
     let html = md;
 
+    html = html.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+
     // Escape HTML
     html = html.replace(/&/g, '&amp;');
     html = html.replace(/</g, '&lt;');
