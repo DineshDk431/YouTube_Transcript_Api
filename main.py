@@ -199,8 +199,233 @@ def update_task_status(task_id: str, status: str, result: dict = None, error: st
         data["error"] = error
     db.collection("tasks").document(task_id).set(data, merge=True)
 
+# ═══════ Transcript Chunking Helpers ═══════
+
+# Thresholds (in characters)
+SHORT_THRESHOLD = 12000    # < 12K chars ≈ < 15 min video
+LONG_THRESHOLD = 50000     # > 50K chars ≈ > 60 min video
+CHUNK_SIZE = 10000         # ~10K chars per chunk ≈ ~2500 tokens
+CHUNK_OVERLAP = 500        # 500 char overlap to avoid cutting mid-sentence
+
+def chunk_transcript(transcript: str, chunk_size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -> list:
+    """Split a long transcript into overlapping chunks, breaking at sentence boundaries."""
+    if len(transcript) <= chunk_size:
+        return [transcript]
+    
+    chunks = []
+    start = 0
+    while start < len(transcript):
+        end = start + chunk_size
+        
+        if end < len(transcript):
+            # Try to break at a sentence boundary (., !, ?)
+            boundary = transcript.rfind('. ', start + chunk_size - 1000, end)
+            if boundary == -1:
+                boundary = transcript.rfind('? ', start + chunk_size - 1000, end)
+            if boundary == -1:
+                boundary = transcript.rfind('! ', start + chunk_size - 1000, end)
+            if boundary != -1:
+                end = boundary + 1  # Include the punctuation
+        
+        chunk = transcript[start:end].strip()
+        if chunk:
+            chunks.append(chunk)
+        
+        start = end - overlap  # Overlap to avoid losing context
+        if start >= len(transcript):
+            break
+    
+    return chunks
+
+# Prompt for chunked medium-length videos (15-60 min)
+CHUNK_SUMMARY_PROMPT = """You are an expert note-taker. This is PART {chunk_num} of {total_chunks} from a video transcript.
+
+Generate detailed notes for THIS SECTION in **{language}**. Focus on the MOST IMPORTANT points discussed.
+
+📋 FORMAT:
+### Section {chunk_num} Key Points
+- 📝 **Point:** [Explanation with detail]
+- 💡 **Example:** [Real-world example]
+(Continue for each major point in this section)
+
+**RULES:**
+1. All text in **{language}**
+2. Be detailed but focus on what matters most
+3. Use emojis for visual engagement
+4. Include practical examples
+
+TRANSCRIPT SECTION:
+{transcript}
+"""
+
+# Prompt for long videos (> 1 hour) — key points only
+KEY_POINTS_PROMPT = """You are an expert note-taker. This is PART {chunk_num} of {total_chunks} from a LONG video transcript (over 1 hour).
+
+Extract ONLY the most critical and important points from THIS SECTION in **{language}**.
+Skip filler, repetition, and minor details. Focus on KEY TAKEAWAYS only.
+
+📋 FORMAT:
+### Section {chunk_num} — Critical Points
+- 🔑 **[Key Point Title]:** [Concise but clear explanation]
+(List only 3-5 most important points from this section)
+
+**RULES:**
+1. All text in **{language}**
+2. ONLY the most important, must-know points
+3. Be concise — no filler
+4. Skip repeated content
+
+TRANSCRIPT SECTION:
+{transcript}
+"""
+
+# Merge prompt to combine chunk notes into final document
+MERGE_PROMPT = """You are an expert note organizer. Below are notes generated from MULTIPLE SECTIONS of a single YouTube video.
+Your job: Merge them into ONE cohesive, well-structured document in **{language}**.
+
+📋 **FORMAT YOUR MERGED NOTES EXACTLY LIKE THIS:**
+
+# 📺 Video Notes
+
+## 🎯 Main Topic
+[Identify the overall subject from all sections]
+
+## 📌 Key Points
+
+### 1️⃣ [First Major Point]
+- 📝 **Explanation:** [Detailed explanation in {language}]
+- 💡 **Real-time Example:** [Practical example in {language}]
+- 🔑 **Key Takeaway:** [One-line summary]
+
+[Continue numbering ALL major points across sections...]
+
+## 🧠 Important Concepts Explained
+| Concept | Definition | Example |
+|---------|-----------|---------|
+| [Term] | [Definition] | [Example] |
+
+## ⚡ Quick Summary
+- ✅ [Key takeaway 1]
+- ✅ [Key takeaway 2]
+- ✅ [Key takeaway 3]
+
+## 🎓 Conclusion
+[Overall message and key learnings]
+
+**RULES:**
+1. ALL output in **{language}**
+2. Remove duplicate points across sections
+3. Maintain logical flow and ordering
+4. Keep the most important details, skip repetition
+5. Use emojis for visual engagement 🎨
+6. Number all points for easy reference
+
+SECTION NOTES TO MERGE:
+{chunk_notes}
+"""
+
+async def generate_for_model(prompt: str, model: str, language: str, role_modifier: str) -> str:
+    """Route generation to the selected model (Gemini or Qwen/Groq)."""
+    if model == "qwen":
+        return await generate_notes_with_qwen3_raw(prompt, language, role_modifier)
+    else:
+        # Gemini with Qwen fallback
+        notes = await generate_notes_with_gemini_raw(prompt, language, role_modifier)
+        if not notes:
+            print("⚠️ Gemini failed, falling back to Qwen...")
+            notes = await generate_notes_with_qwen3_raw(prompt, language, role_modifier)
+        return notes
+
+async def generate_notes_with_gemini_raw(prompt: str, language: str = "English", role_modifier: str = "") -> str:
+    """Generate notes using Gemini with a pre-built prompt (no template replacement)."""
+    retries = 3
+    base_delay = 2
+    loop = asyncio.get_running_loop()
+    
+    full_prompt = prompt
+    if role_modifier:
+        full_prompt = full_prompt + role_modifier
+
+    for attempt in range(retries):
+        try:
+            client = genai.Client(api_key=GEMINI_API_KEY)
+            response = await loop.run_in_executor(
+                None,
+                functools.partial(
+                    client.models.generate_content,
+                    model="gemini-2.0-flash",
+                    contents=full_prompt,
+                    config=types.GenerateContentConfig(
+                        temperature=0.7,
+                        max_output_tokens=8192,
+                    )
+                )
+            )
+            if response.text:
+                return response.text
+            return None
+        except Exception as e:
+            error_msg = str(e)
+            if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
+                if attempt < retries - 1:
+                    wait_time = base_delay * (2 ** attempt)
+                    print(f"⚠️ Gemini 429. Retrying in {wait_time}s...")
+                    await asyncio.sleep(wait_time)
+                    continue
+            print(f"⚠️ Gemini raw prompt failed: {e}")
+            return None
+    return None
+
+async def generate_notes_with_qwen3_raw(prompt: str, language: str = "English", role_modifier: str = "") -> str:
+    """Generate notes using Groq with a pre-built prompt (no template replacement)."""
+    if not GROQ_API_KEY:
+        print("⚠️ GROQ_API_KEY not set, skipping Qwen")
+        return None
+    
+    try:
+        full_prompt = prompt
+        if role_modifier:
+            full_prompt = full_prompt + role_modifier
+        
+        client = Groq(api_key=GROQ_API_KEY)
+        models_to_try = [
+            "qwen/qwen3-32b",
+            "meta-llama/llama-4-scout-17b-16e-instruct",
+            "mixtral-8x7b-32768",
+        ]
+        messages = [
+            {"role": "system", "content": "You are an expert educational note-taker."},
+            {"role": "user", "content": full_prompt}
+        ]
+        
+        loop = asyncio.get_running_loop()
+        for model_id in models_to_try:
+            try:
+                print(f"🤖 Trying Groq model: {model_id}")
+                response = await loop.run_in_executor(
+                    None,
+                    functools.partial(
+                        client.chat.completions.create,
+                        model=model_id,
+                        messages=messages,
+                        max_tokens=8192,
+                        temperature=0.7,
+                    )
+                )
+                if response.choices and response.choices[0].message.content:
+                    print(f"✅ Generated with Groq/{model_id}")
+                    return response.choices[0].message.content
+            except Exception as model_err:
+                print(f"⚠️ Groq model {model_id} failed: {model_err}")
+                continue
+        return None
+    except Exception as e:
+        print(f"⚠️ Groq raw prompt failed entirely: {e}")
+        return None
+
+
 async def process_note_generation(task_id: str, req: GenerateRequest, user_email: str, user_role: str):
-    """Background task to generate notes."""
+    """Background task to generate notes — supports any video length."""
     try:
         # Step 1: Extract video ID
         update_task_status(task_id, "processing", {"step": "extracting_video_id"})
@@ -212,40 +437,124 @@ async def process_note_generation(task_id: str, req: GenerateRequest, user_email
 
         if len(transcript) < 50:
             raise ValueError("Transcript is too short")
-            
-        if len(transcript) > 30000:
-            transcript = transcript[:30000] + "... [truncated]"
 
-        # Step 3: Generate Notes
-        update_task_status(task_id, "processing", {"step": "generating_ai_notes"})
-        
+        transcript_len = len(transcript)
+        print(f"📏 Transcript length: {transcript_len} chars")
+
+        # Step 3: Determine tier & role modifier
         role_instructions = {
             "child": "\n\n🧒 AUDIENCE: CHILD (Under 13). Write in VERY SIMPLE language. Use fun analogies, cartoons, stories. Explain like talking to a 10-year-old. Use lots of emojis. Break complex ideas into tiny steps. Add 'Fun Fact!' sections.",
             "student": "\n\n🎓 AUDIENCE: STUDENT. Write in clear, educational language. Include step-by-step explanations, study tips, and exam-oriented key points. Use diagrams descriptions, mnemonics, and practice questions where possible.",
             "teacher": "\n\n👨‍🏫 AUDIENCE: TEACHER/EDUCATOR. Write in professional academic language. Include pedagogical insights, teaching methodologies, curriculum connections, and discussion prompts. Add references and further reading suggestions. Be thorough and authoritative.",
             "industry": "\n\n💼 AUDIENCE: INDUSTRY PROFESSIONAL. Write in professional, technical language. Include business implications, ROI analysis, implementation strategies, and industry best practices. Use data-driven insights and actionable recommendations. Be concise yet comprehensive."
         }
-        # (Simplified role modifier map for brevity in background task)
-        # Use existing map from main code or redefine
         role_modifier = role_instructions.get(user_role, role_instructions["student"])
 
-        # Try selected model
         notes = None
-        
-        if req.model == "qwen":
-            update_task_status(task_id, "processing", {"step": "generating_with_qwen"})
-            notes = await generate_notes_with_qwen3(transcript, req.output_language, role_modifier)
-        else:
-            # Default to Gemini
-            update_task_status(task_id, "processing", {"step": "generating_with_gemini"})
-            notes = await generate_notes_with_gemini(transcript, GEMINI_API_KEY, req.output_language, role_modifier)
+
+        # ═══════ TIER 1: SHORT VIDEO (< 12K chars, ~< 15 min) ═══════
+        if transcript_len <= SHORT_THRESHOLD:
+            print("📗 Tier: SHORT — sending full transcript")
+            update_task_status(task_id, "processing", {"step": "generating_notes_short_video"})
             
-            # Fallback to Qwen if Gemini fails explicitly (and user didn't force Gemini only? 
-            # For now, keep existing fallback behavior for robustness)
-            if not notes:
-                print("⚠️ Gemini failed, falling back to Qwen...")
-                update_task_status(task_id, "processing", {"step": "fallback_to_qwen"})
+            prompt = GEMINI_PROMPT.replace("{language}", req.output_language).replace("TRANSCRIPT_PLACEHOLDER", transcript)
+            
+            if req.model == "qwen":
                 notes = await generate_notes_with_qwen3(transcript, req.output_language, role_modifier)
+            else:
+                notes = await generate_notes_with_gemini(transcript, GEMINI_API_KEY, req.output_language, role_modifier)
+                if not notes:
+                    print("⚠️ Gemini failed, falling back to Qwen...")
+                    notes = await generate_notes_with_qwen3(transcript, req.output_language, role_modifier)
+
+        # ═══════ TIER 2: MEDIUM VIDEO (12K-50K chars, ~15-60 min) ═══════
+        elif transcript_len <= LONG_THRESHOLD:
+            print(f"📘 Tier: MEDIUM — chunking transcript ({transcript_len} chars)")
+            chunks = chunk_transcript(transcript)
+            total_chunks = len(chunks)
+            print(f"📦 Split into {total_chunks} chunks")
+            
+            chunk_notes_list = []
+            for i, chunk in enumerate(chunks, 1):
+                update_task_status(task_id, "processing", {"step": f"generating_chunk_{i}_of_{total_chunks}"})
+                print(f"🔄 Processing chunk {i}/{total_chunks} ({len(chunk)} chars)")
+                
+                chunk_prompt = CHUNK_SUMMARY_PROMPT.format(
+                    chunk_num=i, total_chunks=total_chunks,
+                    language=req.output_language, transcript=chunk
+                )
+                
+                chunk_result = await generate_for_model(chunk_prompt, req.model, req.output_language, role_modifier)
+                if chunk_result:
+                    chunk_notes_list.append(chunk_result)
+                else:
+                    print(f"⚠️ Chunk {i} failed, skipping...")
+                
+                # Small delay between chunks to respect rate limits
+                if i < total_chunks:
+                    await asyncio.sleep(2)
+            
+            if not chunk_notes_list:
+                raise ValueError("All chunks failed to generate notes")
+            
+            # Merge chunk notes
+            update_task_status(task_id, "processing", {"step": "merging_notes"})
+            combined = "\n\n---\n\n".join(chunk_notes_list)
+            
+            if len(chunk_notes_list) == 1:
+                notes = chunk_notes_list[0]
+            else:
+                merge_prompt = MERGE_PROMPT.format(language=req.output_language, chunk_notes=combined)
+                notes = await generate_for_model(merge_prompt, req.model, req.output_language, "")
+                
+                # If merge fails, just concatenate
+                if not notes:
+                    print("⚠️ Merge failed, concatenating chunk notes...")
+                    notes = f"# 📺 Video Notes\n\n{combined}"
+
+        # ═══════ TIER 3: LONG VIDEO (> 50K chars, ~> 60 min) ═══════
+        else:
+            print(f"📕 Tier: LONG — extracting key points only ({transcript_len} chars)")
+            chunks = chunk_transcript(transcript)
+            total_chunks = len(chunks)
+            print(f"📦 Split into {total_chunks} chunks (key-points mode)")
+            
+            chunk_notes_list = []
+            for i, chunk in enumerate(chunks, 1):
+                update_task_status(task_id, "processing", {"step": f"extracting_keypoints_{i}_of_{total_chunks}"})
+                print(f"🔑 Extracting key points from chunk {i}/{total_chunks} ({len(chunk)} chars)")
+                
+                chunk_prompt = KEY_POINTS_PROMPT.format(
+                    chunk_num=i, total_chunks=total_chunks,
+                    language=req.output_language, transcript=chunk
+                )
+                
+                chunk_result = await generate_for_model(chunk_prompt, req.model, req.output_language, role_modifier)
+                if chunk_result:
+                    chunk_notes_list.append(chunk_result)
+                else:
+                    print(f"⚠️ Chunk {i} key-points failed, skipping...")
+                
+                # Longer delay for long videos to respect rate limits
+                if i < total_chunks:
+                    await asyncio.sleep(3)
+            
+            if not chunk_notes_list:
+                raise ValueError("All chunks failed to extract key points")
+            
+            # Merge key points
+            update_task_status(task_id, "processing", {"step": "merging_key_points"})
+            combined = "\n\n---\n\n".join(chunk_notes_list)
+            
+            if len(chunk_notes_list) == 1:
+                notes = chunk_notes_list[0]
+            else:
+                merge_prompt = MERGE_PROMPT.format(language=req.output_language, chunk_notes=combined)
+                notes = await generate_for_model(merge_prompt, req.model, req.output_language, "")
+                
+                if not notes:
+                    print("⚠️ Merge failed, concatenating key points...")
+                    notes = f"# 📺 Video Notes (Key Points)\n\n{combined}"
 
         if not notes:
             raise ValueError("AI generation failed with selected model")
@@ -262,7 +571,7 @@ async def process_note_generation(task_id: str, req: GenerateRequest, user_email
             "youtube_url": req.youtube_url,
             "language": req.output_language,
             "notes": notes,
-            "transcript_length": len(transcript),
+            "transcript_length": transcript_len,
             "created_at": datetime.utcnow().isoformat()
         }
         save_history_item(user_email, history_entry)

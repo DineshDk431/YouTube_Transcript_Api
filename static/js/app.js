@@ -247,9 +247,22 @@ function initForm() {
                     } else {
                         // Still processing...
                         console.log(`Task status: ${statusData.status}`);
-                        // Optional: update UI with step info if available
+                        // Update UI with step info
                         if (statusData.result && statusData.result.step) {
-                            document.getElementById('processingStatus').textContent = `Step: ${statusData.result.step.replace('_', ' ')}...`;
+                            const step = statusData.result.step;
+                            let friendlyMsg = step.replace(/_/g, ' ');
+
+                            // Make chunk progress more user-friendly
+                            const chunkMatch = step.match(/(?:generating_chunk|extracting_keypoints)_(\d+)_of_(\d+)/);
+                            if (chunkMatch) {
+                                const [, current, total] = chunkMatch;
+                                const action = step.startsWith('extracting') ? 'Extracting key points' : 'Processing section';
+                                friendlyMsg = `${action} ${current} of ${total}...`;
+                            } else if (step === 'merging_notes' || step === 'merging_key_points') {
+                                friendlyMsg = 'Merging all sections into final notes...';
+                            }
+
+                            document.getElementById('processingStatus').textContent = friendlyMsg;
                         }
                     }
                 } catch (pollErr) {
