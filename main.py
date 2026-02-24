@@ -669,12 +669,41 @@ def get_transcript(video_id: str) -> str:
             print(f"⚠️ Failed to create cookie file: {e}")
 
     try:
-        proxies = {"https": proxy_url} if proxy_url else None
-        
+        # ─── Method 1: youtube-transcript-api v1.2+ (instance-based API) ───
         try:
-            transcript_data = YouTubeTranscriptApi.get_transcript(video_id, proxies=proxies, cookies=cookie_file_path)
-            full_text = " ".join([entry['text'] for entry in transcript_data])
-            return full_text
+            api = YouTubeTranscriptApi()
+            
+            # Try fetching transcript — tries English first, then falls back
+            transcript_result = None
+            try:
+                # Try English transcript first
+                transcript_result = api.fetch(video_id, languages=['en'])
+            except Exception:
+                try:
+                    # Try without language preference (gets default)
+                    transcript_result = api.fetch(video_id)
+                except Exception:
+                    # Try listing available transcripts and pick any
+                    try:
+                        transcript_list = api.list(video_id)
+                        # Get the first available transcript
+                        for t in transcript_list:
+                            try:
+                                transcript_result = api.fetch(video_id, languages=[t.language_code])
+                                break
+                            except Exception:
+                                continue
+                    except Exception as list_err:
+                        print(f"⚠️ Could not list transcripts: {list_err}")
+            
+            if transcript_result and transcript_result.snippets:
+                full_text = " ".join([snippet.text for snippet in transcript_result.snippets])
+                if full_text.strip():
+                    print(f"✅ Transcript fetched via youtube-transcript-api ({len(full_text)} chars)")
+                    return full_text
+            
+            raise Exception("youtube-transcript-api returned empty transcript")
+            
         except Exception as e:
             print(f"⚠️ YouTubeTranscriptApi failed: {e}")
             
